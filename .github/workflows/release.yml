@@ -1,0 +1,51 @@
+name: Build/ release IPA
+
+on:
+  workflow_dispatch:
+    inputs:
+      manual_tag:
+        description: 'Tag for the build'
+        required: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install EAS
+        run: npm install -g eas-cli
+
+      - name: Trigger EAS build
+        working-directory: apps/mobile
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          eas build --platform ios --profile preview --non-interactive --wait
+
+      - name: Get latest build artifact
+        working-directory: apps/mobile
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          eas build:list --platform ios --limit 1 --status finished --json > builds.json
+          ARTIFACT_URL=$(node -e "const b=require('./builds.json'); console.log(b[0].artifacts.buildUrl)")
+          curl -L "$ARTIFACT_URL" -o Acorn.ipa
+          
+      - name: Create GH release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: apps/mobile/Acorn.ipa
+          tag_name: ${{ github.event.inputs.manual_tag }}
+          name: Release ${{ github.event.inputs.manual_tag }}
+          generate_release_notes: true
+          draft: false
+          prelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
