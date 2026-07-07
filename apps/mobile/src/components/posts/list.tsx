@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router'
 import { type ReactElement, useCallback, useRef } from 'react'
 import {
   type StyleProp,
+  View,
   type ViewabilityConfig,
   type ViewStyle,
 } from 'react-native'
@@ -13,11 +14,10 @@ import { RefreshControl } from '~/components/common/refresh-control'
 import { Spinner } from '~/components/common/spinner'
 import { PostCard } from '~/components/posts/card'
 import { useHistory } from '~/hooks/history'
-import { type ListProps } from '~/hooks/list'
 import { type PostsProps, usePosts } from '~/hooks/queries/posts/posts'
-import { useScrollToTop } from '~/hooks/scroll-top'
 import { cardMaxWidth, iPad } from '~/lib/common'
-import { usePreferences } from '~/stores/preferences'
+import { listProps } from '~/lib/list'
+import { preferencesStore, usePreferences } from '~/stores/preferences'
 import { type Comment } from '~/types/comment'
 import { type Post } from '~/types/post'
 
@@ -26,10 +26,9 @@ import { Button } from '../common/button'
 import { Empty } from '../common/empty'
 import { Loading } from '../common/loading'
 import { SensorList } from '../common/sensor/list'
-import { View } from '../common/view'
 
 const viewabilityConfig: ViewabilityConfig = {
-  minimumViewTime: usePreferences.getState().seenOnScrollDelay * 1000,
+  minimumViewTime: preferencesStore.getState().seenOnScrollDelay * 1000,
   waitForInteraction: false,
 }
 
@@ -37,7 +36,6 @@ type Item = Post | Comment
 
 type Props = PostsProps & {
   header?: ReactElement
-  listProps?: ListProps<Item>
   onRefresh?: () => void
   style?: StyleProp<ViewStyle>
 }
@@ -47,7 +45,6 @@ export function PostList({
   feed,
   header,
   interval,
-  listProps,
   onRefresh,
   query,
   sort,
@@ -61,10 +58,13 @@ export function PostList({
 
   const list = useRef<FlashListRef<Item>>(null)
 
-  useScrollToTop(list, listProps)
-
   const { feedCompact, infiniteScrolling, seenOnScroll, themeOled } =
-    usePreferences()
+    usePreferences([
+      'feedCompact',
+      'infiniteScrolling',
+      'seenOnScroll',
+      'themeOled',
+    ])
   const { addPost } = useHistory()
 
   styles.useVariants({

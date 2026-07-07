@@ -1,46 +1,61 @@
-import { updateAccounts, useAuth } from '~/stores/auth'
+import { getUserAgent } from '~/lib/user-agent'
+import { authStore } from '~/stores/auth'
 
-import { REDDIT_URI, USER_AGENT } from './config'
-import { refreshAccessToken } from './token'
+export const REDDIT_URI = 'https://www.reddit.com'
+export const REDDIT_OLD_URI = 'https://old.reddit.com'
 
 type Props = {
-  body?: FormData
+  body?: URLSearchParams
   method?: 'get' | 'post'
   url: string | URL
 }
 
 export async function reddit<Response>({ body, method = 'get', url }: Props) {
-  const token = await getToken()
+  const auth = getAuth()
 
-  if (!token) {
+  if (!auth) {
     return
   }
 
   const headers = new Headers()
 
-  headers.set('authorization', `Bearer ${token}`)
-  headers.set('user-agent', USER_AGENT)
+  headers.set('cookie', `reddit_session=${auth.cookie}`)
+  headers.set('user-agent', getUserAgent())
+
+  if (method === 'post') {
+    headers.set('x-modhash', auth.modHash)
+  }
 
   const request: RequestInit = {
+    credentials: 'omit',
     headers,
     method,
+    redirect: 'follow',
   }
 
   if (body) {
-    request.body = body
+    request.body = body.toString()
 
-    headers.set('content-type', 'multipart/form-data')
+    headers.set('content-type', 'application/x-www-form-urlencoded')
   }
 
-  const input = new URL(url, REDDIT_URI)
+  const uri = new URL(url, REDDIT_URI)
 
-  input.searchParams.set('g', 'GLOBAL')
+  if (
+    method === 'get' &&
+    !uri.pathname.startsWith('/api/') &&
+    !uri.pathname.endsWith('.json')
+  ) {
+    uri.pathname += '.json'
+  }
+
+  uri.searchParams.set('raw_json', '1')
 
   if (__DEV__) {
-    console.log('reddit', input.toString(), request)
+    console.log('url', uri.toString())
   }
 
-  const response = await fetch(input, request)
+  const response = await fetch(uri, request)
 
   if (url === '/api/read_all_messages') {
     return {} as Response
@@ -48,17 +63,18 @@ export async function reddit<Response>({ body, method = 'get', url }: Props) {
 
   if (response.status >= 400) {
     const json = (await response.json()) as {
+      explanation?: string
       message?: string
     }
 
-    throw new Error(json.message ?? response.statusText)
+    throw new Error(json.explanation ?? json.message ?? response.statusText)
   }
 
   return (await response.json()) as Response
 }
 
-async function getToken() {
-  const { accountId, accounts } = useAuth.getState()
+export function getAuth() {
+  const { accountId, accounts } = authStore.getState()
 
   if (!accountId) {
     return
@@ -70,20 +86,8 @@ async function getToken() {
     return
   }
 
-  if (new Date() > account.expiresAt) {
-    const payload = await refreshAccessToken(account.refreshToken)
-
-    if (!payload) {
-      return
-    }
-
-    useAuth.setState({
-      accountId: payload.id,
-      accounts: updateAccounts(useAuth.getState().accounts, payload),
-    })
-
-    return payload.accessToken
+  return {
+    cookie: account.cookie,
+    modHash: account.modHash,
   }
-
-  return account.accessToken
 }

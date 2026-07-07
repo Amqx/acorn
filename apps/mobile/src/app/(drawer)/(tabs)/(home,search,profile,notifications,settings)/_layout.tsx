@@ -1,18 +1,17 @@
 import { Stack, useRouter } from 'expo-router'
 import { type PropsWithChildren } from 'react'
+import { StyleSheet } from 'react-native-unistyles'
 import { useTranslations } from 'use-intl'
 
 import { IconButton } from '~/components/common/icon/button'
-import { StackHeader } from '~/components/navigation/stack-header'
 import { useHistory } from '~/hooks/history'
 import { useSubscribed } from '~/hooks/purchases/subscribed'
-import { iPad } from '~/lib/common'
+import { glass, iPad } from '~/lib/common'
 import { mitter } from '~/lib/mitt'
 import { useAuth } from '~/stores/auth'
-import { useDefaults } from '~/stores/defaults'
-import { type Undefined } from '~/types'
+import { usePreferences } from '~/stores/preferences'
+import { oledTheme } from '~/styles/oled'
 
-import { type HomeParams } from '.'
 import { type CommunityParams } from './communities/[name]'
 import { type MessageParams } from './messages/[id]'
 import { type PostParams } from './posts/[id]'
@@ -49,8 +48,7 @@ export default function Layout({ segment }: Props) {
   const t = useTranslations('screen')
   const a11y = useTranslations('a11y')
 
-  const { accountId } = useAuth()
-  const { feedType } = useDefaults()
+  const { accountId } = useAuth(['accountId'])
 
   if (segment === '(search)') {
     return (
@@ -58,16 +56,13 @@ export default function Layout({ segment }: Props) {
         <Stack.Screen
           name="search"
           options={{
-            headerShown: false,
+            headerStyle: styles.transparent,
+            headerTransparent: false,
+            title: t('search.title'),
           }}
         />
 
-        <Stack.Screen
-          name="index"
-          options={({ route }) => ({
-            title: (route.params as Undefined<HomeParams>)?.feed,
-          })}
-        />
+        <Stack.Screen name="index" />
       </StackLayout>
     )
   }
@@ -85,18 +80,14 @@ export default function Layout({ segment }: Props) {
                 onPress={() => {
                   mitter.emit('switch-account')
                 }}
+                size="6"
               />
             ),
             title: accountId,
           }}
         />
 
-        <Stack.Screen
-          name="index"
-          options={({ route }) => ({
-            title: (route.params as Undefined<HomeParams>)?.feed,
-          })}
-        />
+        <Stack.Screen name="index" />
       </StackLayout>
     )
   }
@@ -107,16 +98,11 @@ export default function Layout({ segment }: Props) {
         <Stack.Screen
           name="notifications"
           options={{
-            headerShown: false,
+            title: t('notifications.title'),
           }}
         />
 
-        <Stack.Screen
-          name="index"
-          options={({ route }) => ({
-            title: (route.params as Undefined<HomeParams>)?.feed,
-          })}
-        />
+        <Stack.Screen name="index" />
       </StackLayout>
     )
   }
@@ -136,12 +122,7 @@ export default function Layout({ segment }: Props) {
 
   return (
     <StackLayout>
-      <Stack.Screen
-        initialParams={{
-          type: feedType,
-        }}
-        name="index"
-      />
+      <Stack.Screen name="index" />
     </StackLayout>
   )
 }
@@ -152,6 +133,14 @@ function StackLayout({ children }: PropsWithChildren) {
   const t = useTranslations('screen')
   const a11y = useTranslations('a11y')
 
+  const { themeOled, themeTint } = usePreferences(['themeOled', 'themeTint'])
+
+  styles.useVariants({
+    glass,
+    oled: themeOled,
+    tint: themeTint,
+  })
+
   const { addPost } = useHistory()
 
   const { subscribed } = useSubscribed()
@@ -160,7 +149,12 @@ function StackLayout({ children }: PropsWithChildren) {
     <Stack
       screenOptions={{
         fullScreenGestureEnabled: true,
-        header: (props) => <StackHeader {...props} />,
+        headerBackButtonDisplayMode: 'minimal',
+        headerBackButtonMenuEnabled: false,
+        headerBlurEffect: glass || themeOled ? 'none' : 'systemChromeMaterial',
+        headerShadowVisible: false,
+        headerStyle: styles.main,
+        headerTransparent: true,
       }}
     >
       {children}
@@ -170,7 +164,7 @@ function StackLayout({ children }: PropsWithChildren) {
         options={({ route }) => ({
           headerRight: () => (
             <IconButton
-              icon="info.circle"
+              icon="info"
               label={a11y('aboutCommunity', {
                 community: (route.params as CommunityParams).name,
               })}
@@ -182,6 +176,7 @@ function StackLayout({ children }: PropsWithChildren) {
                   pathname: '/communities/[name]/about',
                 })
               }}
+              size="6"
             />
           ),
           title: (route.params as CommunityParams).name,
@@ -197,15 +192,31 @@ function StackLayout({ children }: PropsWithChildren) {
 
       <Stack.Screen
         name="communities/[name]/search"
-        options={{
-          headerShown: false,
-        }}
+        options={({ route }) => ({
+          title: (route.params as CommunityParams).name,
+        })}
       />
 
       <Stack.Screen
         name="users/[name]/index"
         options={({ route }) => ({
-          headerShown: false,
+          headerRight: () => (
+            <IconButton
+              icon="info"
+              label={a11y('aboutCommunity', {
+                community: (route.params as CommunityParams).name,
+              })}
+              onPress={() => {
+                router.navigate({
+                  params: {
+                    name: (route.params as CommunityParams).name,
+                  },
+                  pathname: '/users/[name]/about',
+                })
+              }}
+              size="6"
+            />
+          ),
           title: (route.params as CommunityParams).name,
         })}
       />
@@ -241,16 +252,29 @@ function StackLayout({ children }: PropsWithChildren) {
         })}
         name="posts/[id]/index"
         options={{
+          headerStyle: styles.transparent,
           headerTransparent: false,
+          title: t('posts.post.title'),
         }}
       />
 
       <Stack.Screen
         name="posts/[id]/reply"
-        options={{
+        options={({ navigation }) => ({
+          headerLeft: () => (
+            <IconButton
+              color="gray"
+              icon="xmark"
+              label={a11y('close')}
+              onPress={() => {
+                navigation.goBack()
+              }}
+              size="6"
+            />
+          ),
           presentation: iPad ? 'formSheet' : 'modal',
           title: t('posts.reply.title'),
-        }}
+        })}
       />
 
       <Stack.Screen
@@ -262,7 +286,7 @@ function StackLayout({ children }: PropsWithChildren) {
             if (user) {
               return (
                 <IconButton
-                  icon="info.circle"
+                  icon="info"
                   label={user}
                   onPress={() => {
                     router.navigate({
@@ -272,11 +296,11 @@ function StackLayout({ children }: PropsWithChildren) {
                       pathname: '/users/[name]',
                     })
                   }}
+                  size="6"
                 />
               )
             }
           },
-          headerTransparent: false,
           title: (route.params as MessageParams).user,
         })}
       />
@@ -333,10 +357,7 @@ function StackLayout({ children }: PropsWithChildren) {
       <Stack.Screen
         name="sign-in"
         options={({ route }) => ({
-          contentStyle: {
-            height: '100%',
-            width: '100%',
-          },
+          contentStyle: styles.full,
           gestureEnabled: (route.params as SignInParams).mode === 'dismissible',
           headerShown: false,
           presentation: iPad ? 'formSheet' : 'modal',
@@ -354,3 +375,52 @@ function StackLayout({ children }: PropsWithChildren) {
     </Stack>
   )
 }
+
+const styles = StyleSheet.create((theme) => ({
+  full: {
+    height: '100%',
+    width: '100%',
+  },
+  main: {
+    compoundVariants: [
+      {
+        glass: false,
+        oled: true,
+        styles: {
+          backgroundColor: oledTheme[theme.variant].bgAlpha,
+        },
+        tint: false,
+      },
+      {
+        glass: false,
+        oled: false,
+        styles: {
+          backgroundColor: theme.colors.accent.bgAlpha,
+        },
+        tint: true,
+      },
+      {
+        glass: false,
+        oled: false,
+        styles: {
+          backgroundColor: 'transparent',
+        },
+        tint: false,
+      },
+    ],
+    variants: {
+      glass: {
+        true: {},
+      },
+      oled: {
+        true: {},
+      },
+      tint: {
+        true: {},
+      },
+    },
+  },
+  transparent: {
+    backgroundColor: 'transparent',
+  },
+}))

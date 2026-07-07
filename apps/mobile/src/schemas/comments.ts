@@ -7,7 +7,7 @@ export const CommentDataSchema = z.object({
   author: z.string(),
   author_flair_richtext: FlairSchema.nullish(),
   author_fullname: z.string().optional(),
-  body_html: z.string(),
+  body: z.string(),
   created_utc: z.number(),
   depth: z.number().nullish(),
   edited: z.union([z.boolean(), z.number()]).optional(),
@@ -61,21 +61,13 @@ export const CommentsSchema = z.object({
 export type CommentsSchema = z.infer<typeof CommentsSchema>
 
 export const MoreCommentsSchema = z.object({
-  json: z.object({
-    data: z.object({
-      things: z.array(
-        z.discriminatedUnion('kind', [
-          z.object({
-            data: CommentDataSchema,
-            kind: z.literal('t1'),
-          }),
-          z.object({
-            data: CommentMoreSchema,
-            kind: z.literal('more'),
-          }),
-        ]),
-      ),
-    }),
+  data: z.object({
+    children: z.array(
+      z.object({
+        data: CommentDataSchema,
+        kind: z.literal('t1'),
+      }),
+    ),
   }),
 })
 
@@ -83,14 +75,21 @@ export type MoreCommentsSchema = z.infer<typeof MoreCommentsSchema>
 
 export const CreateCommentSchema = z.object({
   json: z.object({
-    data: z.object({
-      things: z.array(
-        z.object({
-          data: CommentDataSchema,
-          kind: z.literal('t1'),
-        }),
-      ),
-    }),
+    data: z
+      .object({
+        things: z.array(
+          z.object({
+            data: z.object({
+              id: z.string(),
+              link: z.string(),
+              parent: z.string(),
+            }),
+            kind: z.literal('t1'),
+          }),
+        ),
+      })
+      .optional(),
+    errors: z.array(z.tuple([z.string(), z.string(), z.string()])),
   }),
 })
 

@@ -3,15 +3,15 @@ import { useMutation } from '@tanstack/react-query'
 import * as Clipboard from 'expo-clipboard'
 import { File, Paths } from 'expo-file-system'
 import { type ImageProps } from 'expo-image'
-// biome-ignore lint/performance/noNamespaceImport: go away
-import * as MediaLibrary from 'expo-media-library'
+import { Album, Asset, requestPermissionsAsync } from 'expo-media-library'
 import { compact } from 'lodash'
-import { useRef } from 'react'
+import { useCallback, useRef } from 'react'
 import { Share } from 'react-native'
 import { useUnistyles } from 'react-native-unistyles'
 import { toast } from 'sonner-native'
 import { useTranslations } from 'use-intl'
 
+import { Gallery, type GalleryImage } from '@/gallery'
 import placeholderDark from '~/assets/images/placeholder-dark.png'
 import placeholderLight from '~/assets/images/placeholder-light.png'
 import { usePreferences } from '~/stores/preferences'
@@ -32,7 +32,7 @@ type DownloadImageVariables = {
 export function useDownloadImage() {
   const t = useTranslations('toasts.image')
 
-  const { saveToAlbum } = usePreferences()
+  const { saveToAlbum } = usePreferences(['saveToAlbum'])
 
   const id = useRef<string | number>(undefined)
 
@@ -46,24 +46,20 @@ export function useDownloadImage() {
         duration: Number.POSITIVE_INFINITY,
       })
 
-      const { granted } = await MediaLibrary.requestPermissionsAsync(
-        !saveToAlbum,
-      )
+      const { granted } = await requestPermissionsAsync(!saveToAlbum)
 
       if (!granted) {
         throw new Error('Permission not granted')
       }
 
-      const file = await File.downloadFileAsync(variables.url, Paths.cache)
+      const file = await downloadImage(variables.url)
 
       if (saveToAlbum) {
         const album = await getAlbum()
 
-        const asset = await MediaLibrary.createAssetAsync(file.uri)
-
-        await MediaLibrary.addAssetsToAlbumAsync([asset], album)
+        await Asset.create(file.uri, album)
       } else {
-        await MediaLibrary.saveToLibraryAsync(file.uri)
+        await Asset.create(file.uri)
       }
 
       file.delete()
@@ -100,7 +96,7 @@ type DownloadImagesVariables = {
 export function useDownloadImages() {
   const t = useTranslations('toasts.image')
 
-  const { saveToAlbum } = usePreferences()
+  const { saveToAlbum } = usePreferences(['saveToAlbum'])
 
   const id = useRef<string | number>(undefined)
 
@@ -114,30 +110,26 @@ export function useDownloadImages() {
         duration: Number.POSITIVE_INFINITY,
       })
 
-      const { granted } = await MediaLibrary.requestPermissionsAsync(
-        !saveToAlbum,
-      )
+      const { granted } = await requestPermissionsAsync(!saveToAlbum)
 
       if (!granted) {
         throw new Error('Permission not granted')
       }
 
       const files = await Promise.all(
-        variables.urls.map((url) => File.downloadFileAsync(url, Paths.cache)),
+        variables.urls.map((url) => downloadImage(url)),
       )
 
       if (saveToAlbum) {
         const assets = await Promise.all(
-          files.map((file) => MediaLibrary.createAssetAsync(file.uri)),
+          files.map((file) => Asset.create(file.uri)),
         )
 
         const album = await getAlbum()
 
-        await MediaLibrary.addAssetsToAlbumAsync(compact(assets), album)
+        await album.add(compact(assets))
       } else {
-        await Promise.all(
-          files.map((file) => MediaLibrary.saveToLibraryAsync(file.uri)),
-        )
+        await Promise.all(files.map((file) => Asset.create(file.uri)))
       }
 
       for (const file of files) {
@@ -188,7 +180,7 @@ export function useCopyImage() {
         duration: Number.POSITIVE_INFINITY,
       })
 
-      const file = await File.downloadFileAsync(variables.url, Paths.cache)
+      const file = await downloadImage(variables.url)
 
       await Clipboard.setImageAsync(await file.base64())
 
@@ -235,7 +227,7 @@ export function useShareImage() {
         duration: Number.POSITIVE_INFINITY,
       })
 
-      const file = await File.downloadFileAsync(variables.url, Paths.cache)
+      const file = await downloadImage(variables.url)
 
       const result = await Share.share({
         url: file.uri,
@@ -265,14 +257,55 @@ export function useShareImage() {
   }
 }
 
+export function useImagePreview() {
+  const { theme } = useUnistyles()
+
+  const preview = useCallback(
+    (images: Array<GalleryImage>, index?: number) => {
+      Gallery.open({
+        actions: [
+          {
+            icon: 'square.and.arrow.up',
+            id: 'share',
+          },
+          {
+            icon: 'square.on.square',
+            id: 'copy',
+          },
+          {
+            icon: 'square.and.arrow.down',
+            id: 'download',
+          },
+        ],
+        images,
+        index,
+        theme: theme.variant,
+      })
+    },
+    [theme.variant],
+  )
+
+  return {
+    preview,
+  }
+}
+
+function downloadImage(url: string) {
+  if (url.startsWith('http')) {
+    return File.downloadFileAsync(url, Paths.cache)
+  }
+
+  return new File(url)
+}
+
 export async function getAlbum() {
   const name = 'Acorn'
 
-  const exists = await MediaLibrary.getAlbumAsync(name)
+  const exists = await Album.get(name)
 
   if (exists) {
     return exists
   }
 
-  return MediaLibrary.createAlbumAsync(name)
+  return Album.create(name, [])
 }

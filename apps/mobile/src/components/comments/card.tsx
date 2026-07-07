@@ -1,5 +1,6 @@
 import { Link, useRouter } from 'expo-router'
-import { Share } from 'react-native'
+import { useRef, useState } from 'react'
+import { Share, View } from 'react-native'
 import { StyleSheet } from 'react-native-unistyles'
 import { useTranslations } from 'use-intl'
 
@@ -8,18 +9,20 @@ import { useCommentSave } from '~/hooks/mutations/comments/save'
 import { useCommentVote } from '~/hooks/mutations/comments/vote'
 import { getDepthColor } from '~/lib/colors'
 import { cardMaxWidth, iPad } from '~/lib/common'
+import { REDDIT_URI } from '~/reddit/api'
 import { useGestures } from '~/stores/gestures'
 import { usePreferences } from '~/stores/preferences'
 import { oledTheme } from '~/styles/oled'
 import { type Undefined } from '~/types'
 import { type CommentReply } from '~/types/comment'
 
+import { Banner } from '../common/banner'
 import { Gestures } from '../common/gestures'
-import { Html } from '../common/html'
 import { Icon } from '../common/icon'
 import { Pressable } from '../common/pressable'
+import { type Sheet } from '../common/sheet'
 import { Text } from '../common/text'
-import { View } from '../common/view'
+import { Markdown } from '../markdown'
 import { FlairCard, type FlairType } from '../posts/flair'
 import { CommentMenu } from './menu'
 import { CommentMeta } from './meta'
@@ -29,6 +32,8 @@ type Props = {
   comment: CommentReply
   disabled?: boolean
   dull?: boolean
+  onCollapse?: () => void
+  onCollapseThread?: () => void
   onPress: () => void
 }
 
@@ -37,13 +42,21 @@ export function CommentCard({
   comment,
   disabled,
   dull,
+  onCollapse,
+  onCollapseThread,
   onPress,
 }: Props) {
   const router = useRouter()
 
   const a11y = useTranslations('a11y')
 
-  const { colorfulComments, themeOled, userOnTop } = usePreferences()
+  const { colorfulComments, privateScreenshots, themeOled, userOnTop } =
+    usePreferences([
+      'colorfulComments',
+      'privateScreenshots',
+      'themeOled',
+      'userOnTop',
+    ])
   const {
     commentLeft,
     commentLeftLong,
@@ -51,7 +64,19 @@ export function CommentCard({
     commentRight,
     commentRightLong,
     commentRightShort,
-  } = useGestures()
+  } = useGestures([
+    'commentLeft',
+    'commentLeftLong',
+    'commentLeftShort',
+    'commentRight',
+    'commentRightLong',
+    'commentRightShort',
+  ])
+
+  const card = useRef<View>(null)
+  const menu = useRef<Sheet>(null)
+
+  const [capturing, setCapturing] = useState(false)
 
   styles.useVariants({
     colorful: colorfulComments,
@@ -76,9 +101,15 @@ export function CommentCard({
     return 'both'
   }, undefined)
 
+  const privacy = privateScreenshots && capturing
+
   return (
     <Gestures
-      data={comment}
+      data={{
+        collapsed,
+        liked: comment.liked,
+        saved: comment.saved,
+      }}
       left={{
         enabled: commentLeft,
         long: commentLeftLong,
@@ -121,7 +152,7 @@ export function CommentCard({
         }
 
         if (action === 'share') {
-          const url = new URL(comment.permalink, 'https://www.reddit.com')
+          const url = new URL(comment.permalink, REDDIT_URI)
 
           Share.share({
             url: url.toString(),
@@ -136,6 +167,14 @@ export function CommentCard({
             type: 'comment',
           })
         }
+
+        if (action === 'collapse') {
+          onCollapse?.()
+        }
+
+        if (action === 'collapseThread') {
+          onCollapseThread?.()
+        }
       }}
       right={{
         enabled: commentRight,
@@ -144,7 +183,14 @@ export function CommentCard({
       }}
       style={styles.container(comment.depth)}
     >
-      <CommentMenu comment={comment}>
+      <CommentMenu
+        card={card}
+        comment={comment}
+        onCapturing={setCapturing}
+        onCollapse={onCollapse}
+        onCollapseThread={onCollapseThread}
+        ref={menu}
+      >
         <Pressable
           accessibilityLabel={a11y(
             dull
@@ -154,27 +200,31 @@ export function CommentCard({
                 : 'collapseComment',
           )}
           disabled={disabled}
+          onLongPress={() => {
+            menu.current?.present()
+          }}
           onPress={onPress}
         >
-          <View style={styles.main(comment.depth, dull)}>
+          <View
+            collapsable={false}
+            ref={card}
+            style={styles.main(comment.depth, dull)}
+          >
             {userOnTop ? (
               <CommentMeta
                 collapsed={collapsed}
                 comment={comment}
                 flair={flair}
+                privacy={privacy}
                 top
               />
             ) : null}
 
             {collapsed ? null : (
-              <View p="3">
-                <Html
-                  depth={comment.depth}
-                  meta={comment.media.meta}
-                  type="comment"
-                >
+              <View style={styles.body}>
+                <Markdown meta={comment.media.meta} type="comment">
                   {comment.body}
-                </Html>
+                </Markdown>
               </View>
             )}
 
@@ -191,12 +241,6 @@ export function CommentCard({
                 <Pressable
                   accessibilityHint={a11y('viewPost')}
                   accessibilityLabel={comment.post.title}
-                  align="center"
-                  direction="row"
-                  gap="2"
-                  mb="3"
-                  mx="3"
-                  p="2"
                   style={styles.post}
                 >
                   <Icon
@@ -206,7 +250,7 @@ export function CommentCard({
                     })}
                   />
 
-                  <View flex={1} gap="1">
+                  <View style={styles.title}>
                     <Text size="1" weight="medium">
                       {comment.post.title}
                     </Text>
@@ -224,6 +268,7 @@ export function CommentCard({
                 collapsed={collapsed}
                 comment={comment}
                 flair={flair}
+                privacy={privacy}
               />
             )}
 
@@ -235,7 +280,9 @@ export function CommentCard({
               />
             ) : null}
 
-            {comment.saved ? (
+            {capturing ? <Banner /> : null}
+
+            {!privacy && comment.saved ? (
               <View pointerEvents="none" style={styles.saved} />
             ) : null}
           </View>
@@ -247,22 +294,24 @@ export function CommentCard({
 
 const styles = StyleSheet.create((theme, runtime) => ({
   body: {
-    margin: theme.space[3],
+    padding: theme.space[3],
   },
   container: (depth: number) => {
     const marginLeft = theme.space[2] * depth
 
     return {
       alignSelf: 'center',
+      borderCurve: 'continuous',
       marginLeft,
       overflow: 'hidden',
       variants: {
         iPad: {
           false: {
+            borderBottomLeftRadius: depth > 0 ? theme.radius[3] : undefined,
+            borderTopLeftRadius: depth > 0 ? theme.radius[3] : undefined,
             maxWidth: runtime.screen.width - marginLeft,
           },
           true: {
-            borderCurve: 'continuous',
             borderRadius: theme.radius[3],
             maxWidth: cardMaxWidth - marginLeft,
           },
@@ -330,9 +379,15 @@ const styles = StyleSheet.create((theme, runtime) => ({
     }
   },
   post: {
+    alignItems: 'center',
     backgroundColor: theme.colors.gray.uiAlpha,
     borderCurve: 'continuous',
     borderRadius: theme.radius[4],
+    flexDirection: 'row',
+    gap: theme.space[2],
+    marginBottom: theme.space[3],
+    marginHorizontal: theme.space[3],
+    padding: theme.space[2],
   },
   saved: {
     backgroundColor: theme.colors.green.accent,
@@ -346,5 +401,9 @@ const styles = StyleSheet.create((theme, runtime) => ({
       },
     ],
     width: theme.space[8],
+  },
+  title: {
+    flex: 1,
+    gap: theme.space[1],
   },
 }))

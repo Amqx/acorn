@@ -21,13 +21,13 @@ type Variables = {
 export function useCommentSave() {
   const t = useTranslations('toasts.comments')
 
-  const { upvoteOnSave } = usePreferences()
+  const { upvoteOnSave } = usePreferences(['upvoteOnSave'])
 
   const { vote } = useCommentVote()
 
   const { isPending, mutate } = useMutation<unknown, Error, Variables>({
     async mutationFn(variables) {
-      const body = new FormData()
+      const body = new URLSearchParams()
 
       body.append('id', addPrefix(variables.commentId, 'comment'))
 

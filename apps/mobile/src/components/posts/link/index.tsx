@@ -1,18 +1,16 @@
 import { Image } from 'expo-image'
+import { View } from 'react-native'
 import { StyleSheet } from 'react-native-unistyles'
 import { useTranslations } from 'use-intl'
 
 import { Icon } from '~/components/common/icon'
 import { Pressable } from '~/components/common/pressable'
 import { Text } from '~/components/common/text'
-import { View } from '~/components/common/view'
 import { useHistory } from '~/hooks/history'
 import { useImagePlaceholder } from '~/hooks/image'
 import { useLink } from '~/hooks/link'
 import { usePreferences } from '~/stores/preferences'
 import { type PostMedia } from '~/types/post'
-
-import { LinkMenu } from './menu'
 
 type Props = {
   compact?: boolean
@@ -21,6 +19,7 @@ type Props = {
   media?: PostMedia
   recyclingKey?: string
   url: string
+  onLongPress?: () => void
 }
 
 export function PostLinkCard({
@@ -30,10 +29,14 @@ export function PostLinkCard({
   media,
   recyclingKey,
   url,
+  onLongPress,
 }: Props) {
   const a11y = useTranslations('a11y')
 
-  const { seenOnMedia, themeOled } = usePreferences()
+  const { seenOnMedia, themeOled } = usePreferences([
+    'seenOnMedia',
+    'themeOled',
+  ])
   const { handleLink } = useLink()
   const { addPost } = useHistory()
 
@@ -58,71 +61,71 @@ export function PostLinkCard({
 
   if (compact) {
     return (
-      <LinkMenu url={url}>
-        <Pressable
-          accessibilityLabel={a11y('viewLink')}
-          onPress={onPress}
-          style={styles.main}
-        >
-          {media?.thumbnail ? (
-            <Image
-              accessibilityIgnoresInvertColors
-              source={media.thumbnail}
-              style={styles.image}
-            />
-          ) : null}
-
-          <View align="center" justify="center" style={styles.icon}>
-            <Icon
-              name="safari"
-              uniProps={(theme) => ({
-                tintColor: theme.colors.accent.accent,
-              })}
-            />
-          </View>
-        </Pressable>
-      </LinkMenu>
-    )
-  }
-
-  return (
-    <LinkMenu url={url}>
       <Pressable
         accessibilityLabel={a11y('viewLink')}
+        onLongPress={onLongPress}
         onPress={onPress}
         style={styles.main}
       >
-        {media ? (
+        {media?.thumbnail ? (
           <Image
-            {...placeholder}
             accessibilityIgnoresInvertColors
-            recyclingKey={recyclingKey}
-            source={media.url}
+            source={media.thumbnail}
             style={styles.image}
           />
         ) : null}
 
-        <View align="center" direction="row" gap="3" p="3">
+        <View style={styles.icon}>
           <Icon
             name="safari"
             uniProps={(theme) => ({
-              size: theme.typography[2].lineHeight,
+              tintColor: theme.colors.accent.accent,
             })}
           />
-
-          <Text numberOfLines={1} size="2" style={styles.url}>
-            {url}
-          </Text>
         </View>
       </Pressable>
-    </LinkMenu>
+    )
+  }
+
+  return (
+    <Pressable
+      accessibilityLabel={a11y('viewLink')}
+      onLongPress={onLongPress}
+      onPress={onPress}
+      style={styles.main}
+    >
+      {media ? (
+        <Image
+          {...placeholder}
+          accessibilityIgnoresInvertColors
+          recyclingKey={recyclingKey}
+          source={media.url}
+          style={styles.image}
+        />
+      ) : null}
+
+      <View style={styles.link}>
+        <Icon
+          name="safari"
+          uniProps={(theme) => ({
+            size: theme.typography[2].lineHeight,
+          })}
+        />
+
+        <Text numberOfLines={1} size="2" style={styles.url}>
+          {url}
+        </Text>
+      </View>
+    </Pressable>
   )
 }
 
 const styles = StyleSheet.create((theme) => ({
   icon: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
+    alignItems: 'center',
     backgroundColor: theme.colors.black.accentAlpha,
+    justifyContent: 'center',
   },
   image: {
     aspectRatio: 2,
@@ -133,6 +136,12 @@ const styles = StyleSheet.create((theme) => ({
         },
       },
     },
+  },
+  link: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: theme.space[3],
+    padding: theme.space[3],
   },
   main: {
     backgroundColor: theme.colors.gray.uiActive,

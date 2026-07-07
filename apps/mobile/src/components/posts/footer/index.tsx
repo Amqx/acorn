@@ -1,7 +1,7 @@
-import { type StyleProp, type ViewStyle } from 'react-native'
+import { type StyleProp, View, type ViewStyle } from 'react-native'
+import { StyleSheet } from 'react-native-unistyles'
 import { useTranslations } from 'use-intl'
 
-import { View } from '~/components/common/view'
 import { usePostVote } from '~/hooks/mutations/posts/vote'
 import { getIcon } from '~/lib/icons'
 import { usePreferences } from '~/stores/preferences'
@@ -14,37 +14,30 @@ import { PostMeta } from './meta'
 type Props = {
   community?: boolean
   post: Post
+  privacy?: boolean
   style?: StyleProp<ViewStyle>
 }
 
-export function PostFooter({ community = true, post, style }: Props) {
+export function PostFooter({ community = true, post, privacy, style }: Props) {
   const a11y = useTranslations('a11y')
 
-  const { hidePostActions } = usePreferences()
+  const { hidePostActions } = usePreferences(['hidePostActions'])
 
   const { vote } = usePostVote()
 
   return (
-    <View
-      align={community ? 'center' : 'end'}
-      direction="row"
-      gap="4"
-      justify="between"
-      m="-3"
-      p="3"
-      style={style}
-    >
-      <View flexShrink={1} gap="2">
+    <View style={[styles.main(community), style]}>
+      <View style={styles.header}>
         {community ? <PostCommunity post={post} /> : null}
 
-        <PostMeta post={post} />
+        <PostMeta post={post} privacy={privacy} />
       </View>
 
       {hidePostActions ? null : (
-        <View align="center" direction="row" gap="2">
+        <View style={styles.footer}>
           <FooterButton
-            color={post.liked === true ? 'orange' : undefined}
-            fill={post.liked === true}
+            color={!privacy && post.liked === true ? 'orange' : undefined}
+            fill={!privacy && post.liked === true}
             icon={getIcon('upvote.fill')}
             label={a11y(post.liked ? 'removeUpvote' : 'upvote')}
             onPress={() => {
@@ -56,8 +49,8 @@ export function PostFooter({ community = true, post, style }: Props) {
           />
 
           <FooterButton
-            color={post.liked === false ? 'violet' : undefined}
-            fill={post.liked === false}
+            color={!privacy && post.liked === false ? 'violet' : undefined}
+            fill={!privacy && post.liked === false}
             icon={getIcon('downvote.fill')}
             label={a11y(post.liked === false ? 'removeDownvote' : 'downvote')}
             onPress={() => {
@@ -72,3 +65,23 @@ export function PostFooter({ community = true, post, style }: Props) {
     </View>
   )
 }
+
+const styles = StyleSheet.create((theme) => ({
+  footer: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: theme.space[2],
+  },
+  header: {
+    flexShrink: 1,
+    gap: theme.space[2],
+  },
+  main: (community: boolean) => ({
+    alignItems: community ? 'center' : 'flex-start',
+    flexDirection: 'row',
+    gap: theme.space[4],
+    justifyContent: 'space-between',
+    margin: -theme.space[3],
+    padding: theme.space[3],
+  }),
+}))

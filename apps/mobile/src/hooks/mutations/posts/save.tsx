@@ -22,13 +22,13 @@ type Variables = {
 export function usePostSave() {
   const t = useTranslations('toasts.posts')
 
-  const { upvoteOnSave } = usePreferences()
+  const { upvoteOnSave } = usePreferences(['upvoteOnSave'])
 
   const { vote } = usePostVote()
 
   const { isPending, mutate } = useMutation<unknown, Error, Variables>({
     async mutationFn(variables) {
-      const body = new FormData()
+      const body = new URLSearchParams()
 
       body.append('id', addPrefix(variables.postId, 'link'))
 

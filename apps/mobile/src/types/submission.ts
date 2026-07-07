@@ -1,5 +1,7 @@
 import { type Flair } from './flair'
 
+export type SubmissionType = 'text' | 'image' | 'video' | 'link'
+
 export type Submission = {
   community: {
     id: string
@@ -29,30 +31,5 @@ export type Submission = {
     spoiler: boolean
     text: boolean
     video: boolean
-  }
-  rules: {
-    body: {
-      blacklist: Array<string>
-      max?: number
-      min?: number
-      required: Array<string>
-    }
-    domains: {
-      blacklist: Array<string>
-      whitelist: Array<string>
-    }
-    flair: {
-      required: boolean
-    }
-    media: {
-      max?: number
-      min?: number
-    }
-    title: {
-      blacklist: Array<string>
-      max?: number
-      min?: number
-      required: Array<string>
-    }
   }
 }

@@ -2,7 +2,7 @@ import { type SFSymbol } from 'expo-symbols'
 import { type StyleProp, type ViewStyle } from 'react-native'
 import { StyleSheet } from 'react-native-unistyles'
 
-import { glass } from '~/lib/common'
+import { glass, heights, iPad } from '~/lib/common'
 import { mapColors } from '~/lib/styles'
 import { type ColorToken, space } from '~/styles/tokens'
 
@@ -41,7 +41,12 @@ export function FloatingButton({
   const Component = glass ? GlassView : BlurView
 
   return (
-    <Component intensity={100} isInteractive style={[styles.main, style]}>
+    <Component
+      intensity={100}
+      isInteractive
+      style={[styles.main, style]}
+      tint="systemChromeMaterial"
+    >
       <IconButton
         color={color}
         hitSlop={space[4]}
@@ -59,7 +64,7 @@ const styles = StyleSheet.create((theme, runtime) => ({
   main: {
     borderCurve: 'continuous',
     borderRadius: theme.space[8],
-    bottom: runtime.insets.bottom + 64,
+    bottom: runtime.insets.bottom + (iPad ? theme.space[4] : heights.tabBar),
     overflow: glass ? undefined : 'hidden',
     position: 'absolute',
     variants: {

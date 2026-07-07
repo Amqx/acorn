@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 
-import { reddit } from '~/reddit/api'
-import { REDDIT_URI } from '~/reddit/config'
+import { REDDIT_URI, reddit } from '~/reddit/api'
 import { type NotificationsSchema } from '~/schemas/notifications'
 import { useAuth } from '~/stores/auth'
 
@@ -13,7 +12,7 @@ export type UnreadQueryKey = [
 ]
 
 export function useUnread() {
-  const { accountId } = useAuth()
+  const { accountId } = useAuth(['accountId'])
 
   const { data } = useQuery<number, Error, number, UnreadQueryKey>({
     enabled: Boolean(accountId),

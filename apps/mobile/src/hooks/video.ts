@@ -3,25 +3,26 @@
 import { createId } from '@paralleldrive/cuid2'
 import { useMutation } from '@tanstack/react-query'
 import { File, Paths } from 'expo-file-system'
-// biome-ignore lint/performance/noNamespaceImport: go away
-import * as MediaLibrary from 'expo-media-library'
+import { Asset, requestPermissionsAsync } from 'expo-media-library'
 import { FFmpegKit } from 'ffmpeg-kit-react-native'
 import { useRef } from 'react'
 import { toast } from 'sonner-native'
 import { useTranslations } from 'use-intl'
 
+import { getGif } from '~/lib/red-gifs'
 import { usePreferences } from '~/stores/preferences'
 
 import { getAlbum } from './image'
 
 type DownloadVideoVariables = {
   url: string
+  provider?: 'reddit' | 'red-gifs'
 }
 
 export function useDownloadVideo() {
   const t = useTranslations('toasts.video')
 
-  const { saveToAlbum } = usePreferences()
+  const { saveToAlbum } = usePreferences(['saveToAlbum'])
 
   const id = useRef<string | number>(undefined)
 
@@ -35,28 +36,27 @@ export function useDownloadVideo() {
         duration: Number.POSITIVE_INFINITY,
       })
 
-      const { granted } = await MediaLibrary.requestPermissionsAsync(
-        !saveToAlbum,
-      )
+      const { granted } = await requestPermissionsAsync(!saveToAlbum)
 
       if (!granted) {
         throw new Error('Permission not granted')
       }
 
+      const { url } =
+        variables.provider === 'red-gifs'
+          ? await getGif(variables.url)
+          : variables
+
       const file = new File(Paths.cache, `${createId()}.mp4`)
 
-      await FFmpegKit.execute(
-        `-i "${variables.url}" -c:v copy -c:a aac ${file.uri}`,
-      )
+      await FFmpegKit.execute(`-i "${url}" -c:v copy -c:a aac ${file.uri}`)
 
       if (saveToAlbum) {
         const album = await getAlbum()
 
-        const asset = await MediaLibrary.createAssetAsync(file.uri)
-
-        await MediaLibrary.addAssetsToAlbumAsync([asset], album)
+        await Asset.create(file.uri, album)
       } else {
-        await MediaLibrary.saveToLibraryAsync(file.uri)
+        await Asset.create(file.uri)
       }
 
       file.delete()

@@ -1,32 +1,24 @@
-import { FlashList, type FlashListRef } from '@shopify/flash-list'
-import { useRef } from 'react'
+import { FlashList } from '@shopify/flash-list'
+import { View } from 'react-native'
 import { StyleSheet } from 'react-native-unistyles'
 
-import { type ListProps } from '~/hooks/list'
 import { useNotifications } from '~/hooks/queries/user/notifications'
-import { useScrollToTop } from '~/hooks/scroll-top'
+import { heights } from '~/lib/common'
+import { listProps } from '~/lib/list'
 import { usePreferences } from '~/stores/preferences'
-import { type Notification } from '~/types/notification'
 
 import { Empty } from '../common/empty'
 import { Loading } from '../common/loading'
 import { RefreshControl } from '../common/refresh-control'
 import { Spinner } from '../common/spinner'
-import { View } from '../common/view'
 import { NotificationCard } from './notification'
 
-type Props = {
-  listProps?: ListProps<Notification>
-}
-
-export function NotificationsList({ listProps }: Props) {
-  const { themeOled } = usePreferences()
+export function NotificationsList() {
+  const { themeOled } = usePreferences(['themeOled'])
 
   styles.useVariants({
     oled: themeOled,
   })
-
-  const list = useRef<FlashListRef<Notification>>(null)
 
   const {
     fetchNextPage,
@@ -37,31 +29,32 @@ export function NotificationsList({ listProps }: Props) {
     refetch,
   } = useNotifications()
 
-  useScrollToTop(list, listProps)
-
   return (
     <FlashList
       {...listProps}
+      contentContainerStyle={styles.content}
       data={notifications}
       ItemSeparatorComponent={() => <View style={styles.separator} />}
       keyExtractor={(item) => item.id}
       ListEmptyComponent={isLoading ? <Loading /> : <Empty />}
       ListFooterComponent={() =>
-        isFetchingNextPage ? <Spinner m="6" /> : null
+        isFetchingNextPage ? <Spinner style={styles.spinner} /> : null
       }
       onEndReached={() => {
         if (hasNextPage) {
           fetchNextPage()
         }
       }}
-      ref={list}
       refreshControl={<RefreshControl onRefresh={refetch} />}
       renderItem={({ item }) => <NotificationCard notification={item} />}
     />
   )
 }
 
-const styles = StyleSheet.create((theme) => ({
+const styles = StyleSheet.create((theme, runtime) => ({
+  content: {
+    paddingBottom: heights.tabBar + runtime.insets.bottom,
+  },
   separator: {
     height: theme.space[4],
     variants: {
@@ -72,5 +65,8 @@ const styles = StyleSheet.create((theme) => ({
         },
       },
     },
+  },
+  spinner: {
+    margin: theme.space[6],
   },
 }))

@@ -13,7 +13,6 @@ import { space } from '~/styles/tokens'
 import { type PostMedia } from '~/types/post'
 
 import { GalleryBlur } from '../gallery/blur'
-import { VideoMenu } from './menu'
 import { VideoStatus } from './status'
 
 type Props = {
@@ -22,6 +21,7 @@ type Props = {
   recyclingKey?: string
   spoiler?: boolean
   video: PostMedia
+  onLongPress?: () => void
 }
 
 export function VideoPlayer({
@@ -30,6 +30,7 @@ export function VideoPlayer({
   recyclingKey,
   spoiler,
   video,
+  onLongPress,
 }: Props) {
   const t = useTranslations('component.posts.video')
   const a11y = useTranslations('a11y')
@@ -42,7 +43,15 @@ export function VideoPlayer({
     pictureInPicture,
     seenOnMedia,
     unmuteFullscreen,
-  } = usePreferences()
+  } = usePreferences([
+    'autoPlay',
+    'blurNsfw',
+    'blurSpoiler',
+    'feedMuted',
+    'pictureInPicture',
+    'seenOnMedia',
+    'unmuteFullscreen',
+  ])
   const { addPost } = useHistory()
 
   styles.useVariants({
@@ -85,90 +94,88 @@ export function VideoPlayer({
   }
 
   return (
-    <VideoMenu url={video.url}>
-      <Pressable
-        accessibilityLabel={a11y('viewVideo')}
-        onPress={onPress}
-        style={styles.main}
+    <Pressable
+      accessibilityLabel={a11y('viewVideo')}
+      onLongPress={onLongPress}
+      onPress={onPress}
+      style={styles.main}
+    >
+      <VisibilitySensor
+        id={video.url}
+        onChange={(next) => {
+          setVisible(next.full)
+        }}
       >
-        <VisibilitySensor
-          id={video.url}
-          onChange={(next) => {
-            setVisible(next.full)
+        <VideoView
+          accessibilityIgnoresInvertColors
+          allowsPictureInPicture={pictureInPicture}
+          contentFit="cover"
+          fullscreenOptions={{
+            enable: false,
           }}
+          onFullscreenEnter={() => {
+            player.play()
+
+            if (unmuteFullscreen && muted) {
+              player.muted = false
+            }
+          }}
+          onFullscreenExit={() => {
+            if (compact || !autoPlay) {
+              player.pause()
+            }
+          }}
+          player={player}
+          pointerEvents="none"
+          ref={ref}
+          style={styles.video(video.width / video.height)}
+        />
+      </VisibilitySensor>
+
+      {compact ? null : <VideoStatus player={player} />}
+
+      {compact ? (
+        <Pressable
+          accessibilityLabel={a11y('viewVideo')}
+          onPress={onPress}
+          style={styles.compact}
         >
-          <VideoView
-            accessibilityIgnoresInvertColors
-            allowsPictureInPicture={pictureInPicture}
-            contentFit="cover"
-            fullscreenOptions={{
-              enable: false,
-            }}
-            onFullscreenEnter={() => {
-              player.play()
+          <Icon name="play.fill" />
 
-              if (unmuteFullscreen && muted) {
-                player.muted = false
-              }
-            }}
-            onFullscreenExit={() => {
-              if (compact || !autoPlay) {
-                player.pause()
-              }
-            }}
-            player={player}
-            pointerEvents="none"
-            ref={ref}
-            style={styles.video(video.width / video.height)}
+          {(nsfw && blurNsfw) || (spoiler && blurSpoiler) ? (
+            <GalleryBlur />
+          ) : null}
+        </Pressable>
+      ) : (nsfw && blurNsfw) || (spoiler && blurSpoiler) ? (
+        <GalleryBlur label={t(spoiler ? 'spoiler' : 'nsfw')} />
+      ) : (
+        <Pressable
+          accessibilityLabel={a11y(muted ? 'unmute' : 'mute')}
+          hitSlop={space[2]}
+          onPress={() => {
+            player.muted = !muted
+          }}
+          style={styles.volume}
+        >
+          <Icon
+            name={muted ? 'speaker.slash' : 'speaker.2'}
+            uniProps={(theme) => ({
+              size: theme.space[4],
+              tintColor: theme.colors.gray.contrast,
+            })}
           />
-        </VisibilitySensor>
-
-        {compact ? null : <VideoStatus player={player} />}
-
-        {compact ? (
-          <Pressable
-            accessibilityLabel={a11y('viewVideo')}
-            align="center"
-            justify="center"
-            onPress={onPress}
-            style={styles.compact}
-          >
-            <Icon name="play.fill" />
-
-            {Boolean(nsfw && blurNsfw) || Boolean(spoiler && blurSpoiler) ? (
-              <GalleryBlur />
-            ) : null}
-          </Pressable>
-        ) : Boolean(nsfw && blurNsfw) || Boolean(spoiler && blurSpoiler) ? (
-          <GalleryBlur label={t(spoiler ? 'spoiler' : 'nsfw')} />
-        ) : (
-          <Pressable
-            accessibilityLabel={a11y(muted ? 'unmute' : 'mute')}
-            hitSlop={space[2]}
-            onPress={() => {
-              player.muted = !muted
-            }}
-            p="2"
-            style={styles.volume}
-          >
-            <Icon
-              name={muted ? 'speaker.slash' : 'speaker.2'}
-              uniProps={(theme) => ({
-                size: theme.space[4],
-                tintColor: theme.colors.gray.contrast,
-              })}
-            />
-          </Pressable>
-        )}
-      </Pressable>
-    </VideoMenu>
+        </Pressable>
+      )}
+    </Pressable>
   )
 }
 
 const styles = StyleSheet.create((theme, runtime) => ({
   compact: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
+    alignItems: 'center',
     backgroundColor: theme.colors.black.accentAlpha,
+    justifyContent: 'center',
   },
   main: {
     justifyContent: 'center',
@@ -192,6 +199,7 @@ const styles = StyleSheet.create((theme, runtime) => ({
     borderCurve: 'continuous',
     borderRadius: theme.space[4],
     bottom: theme.space[3],
+    padding: theme.space[2],
     position: 'absolute',
     right: theme.space[2],
   },

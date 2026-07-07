@@ -6,6 +6,7 @@ import Animated, {
   useAnimatedProps,
   useAnimatedStyle,
   useSharedValue,
+  withSequence,
   withTiming,
 } from 'react-native-reanimated'
 import { StyleSheet, useUnistyles } from 'react-native-unistyles'
@@ -86,32 +87,27 @@ export function Actions({ children, data, gestures, onAction, style }: Props) {
             ? 'short'
             : null
 
-      const gesture = gestures[side][swipe ?? 'short']
+      const $gesture = gestures[side][swipe ?? 'short']
 
-      if (swipe && gesture !== action.get()) {
+      if (swipe && $gesture !== action.get()) {
         scale.set(
-          withTiming(
-            1.5,
-            {
+          withSequence(
+            withTiming(1.75, {
               duration: 100,
-            },
-            () => {
-              scale.set(
-                withTiming(1, {
-                  duration: 100,
-                }),
-              )
-            },
+            }),
+            withTiming(1, {
+              duration: 100,
+            }),
           ),
         )
 
         scheduleOnRN(triggerFeedback, 'soft')
       }
 
-      color.set(theme.colors[GestureColors[gesture]].accent)
-      icon.set(getNextIcon(gesture, data))
+      color.set(theme.colors[GestureColors[$gesture]].accent)
+      icon.set(getNextIcon($gesture, data))
 
-      action.set(swipe ? gesture : null)
+      action.set(swipe ? $gesture : null)
 
       opacity.set(
         withTiming(swipe ? 1 : 0.5, {
@@ -245,6 +241,8 @@ const styles = StyleSheet.create({
 })
 
 export const GestureColors = {
+  collapse: 'accent',
+  collapseThread: 'accent',
   downvote: 'violet',
   hide: 'red',
   reply: 'blue',
@@ -254,6 +252,8 @@ export const GestureColors = {
 } as const satisfies Record<GestureAction, ColorToken>
 
 export const GestureIcons = {
+  collapse: 'arrow.down.and.line.horizontal.and.arrow.up',
+  collapseThread: 'arrow.right.and.line.vertical.and.arrow.left',
   downvote: getIcon('downvote'),
   hide: 'eye.slash',
   reply: 'arrowshape.turn.up.backward',
@@ -264,6 +264,16 @@ export const GestureIcons = {
 
 function getNextIcon(action: GestureAction, data: GestureData): SFSymbol {
   'worklet'
+
+  if (action === 'collapse') {
+    return data.collapsed
+      ? 'arrow.up.and.line.horizontal.and.arrow.down'
+      : GestureIcons.collapse
+  }
+
+  if (action === 'collapseThread') {
+    return GestureIcons.collapseThread
+  }
 
   if (action === 'upvote') {
     return data.liked ? GestureIcons.upvote : `${GestureIcons.upvote}.fill`

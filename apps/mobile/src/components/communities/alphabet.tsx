@@ -1,5 +1,6 @@
 import { range, sortBy, uniqBy } from 'lodash'
 import { useCallback, useMemo } from 'react'
+import { View } from 'react-native'
 import {
   Gesture,
   GestureDetector,
@@ -14,7 +15,6 @@ import { type Community } from '~/types/community'
 
 import { Icon } from '../common/icon'
 import { Text } from '../common/text'
-import { View } from '../common/view'
 
 export type AlphabetItem = {
   data: Community
@@ -78,22 +78,20 @@ export function AlphabetList({ data, onScroll }: Props) {
         PanGestureHandlerEventPayload | TapGestureHandlerEventPayload
       >,
     ) => {
-      const length = items.length
-
-      if (length === 1) {
+      if (items.length === 1) {
         onScroll(0)
 
         return
       }
 
-      const height = length * 18
-      const letters = range(length)
+      const height = items.length * 18
+      const letters = range(items.length)
 
       const y = clamp(event.y, 0, height)
 
       const value = interpolate(
         y,
-        letters.map((item) => item * (height / length)),
+        letters.map((item) => item * (height / items.length)),
         letters,
       )
 
@@ -121,7 +119,7 @@ export function AlphabetList({ data, onScroll }: Props) {
       <View style={styles.main}>
         {items.map((item) =>
           item.letter === 'favorite' ? (
-            <View justify="center" key={item.key} style={styles.letter}>
+            <View key={item.key} style={styles.letter}>
               <Icon
                 name="star.fill"
                 size={14}
@@ -150,6 +148,7 @@ export function AlphabetList({ data, onScroll }: Props) {
 const styles = StyleSheet.create((theme) => ({
   letter: {
     height: 18,
+    justifyContent: 'center',
   },
   main: {
     alignItems: 'center',

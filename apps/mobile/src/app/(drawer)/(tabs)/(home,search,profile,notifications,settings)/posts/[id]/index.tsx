@@ -5,9 +5,12 @@ import {
   useNavigation,
   useRouter,
 } from 'expo-router'
+import fuzzysort from 'fuzzysort'
+import { create } from 'mutative'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { View } from 'react-native'
 import { StyleSheet } from 'react-native-unistyles'
+import { useDebounce } from 'use-debounce'
 import { useTranslations } from 'use-intl'
 import { z } from 'zod'
 
@@ -17,19 +20,17 @@ import { Empty } from '~/components/common/empty'
 import { FloatingButton } from '~/components/common/floating-button'
 import { Pressable } from '~/components/common/pressable'
 import { RefreshControl } from '~/components/common/refresh-control'
+import { SearchBox } from '~/components/common/search'
 import { SensorList } from '~/components/common/sensor/list'
 import { Spinner } from '~/components/common/spinner'
 import { Text } from '~/components/common/text'
-import { View } from '~/components/common/view'
 import { PostCard } from '~/components/posts/card'
 import { PostHeader } from '~/components/posts/header'
 import { SortIntervalMenu } from '~/components/posts/sort-interval'
-import { ListFlags, useList } from '~/hooks/list'
 import { usePost } from '~/hooks/queries/posts/post'
-import { heights, iPad } from '~/lib/common'
+import { cardMaxWidth, glass, heights, iPad } from '~/lib/common'
 import { removePrefix } from '~/lib/reddit'
 import { usePreferences } from '~/stores/preferences'
-import { space } from '~/styles/tokens'
 import { type Comment } from '~/types/comment'
 
 const schema = z.object({
@@ -40,8 +41,6 @@ const schema = z.object({
 export type PostParams = z.infer<typeof schema>
 
 export default function Screen() {
-  const insets = useSafeAreaInsets()
-
   const router = useRouter()
   const navigation = useNavigation()
   const params = schema.parse(useLocalSearchParams())
@@ -49,7 +48,12 @@ export default function Screen() {
   const a11y = useTranslations('a11y')
 
   const { collapsibleComments, replyPost, skipComment, sortPostComments } =
-    usePreferences()
+    usePreferences([
+      'collapsibleComments',
+      'replyPost',
+      'skipComment',
+      'sortPostComments',
+    ])
 
   styles.useVariants({
     iPad,
@@ -58,16 +62,40 @@ export default function Screen() {
   const list = useRef<FlashListRef<Comment>>(null)
 
   const [sort, setSort] = useState(sortPostComments)
+  const [query, setQuery] = useState('')
 
-  const listProps = useList(ListFlags.BOTTOM)
+  const [queryText] = useDebounce(query, 500)
 
-  const { collapse, comments, isFetching, post, refetch } = usePost({
+  const {
+    collapse,
+    collapseThread,
+    comments: data,
+    isFetching,
+    post,
+    refetch,
+  } = usePost({
     commentId: params.commentId,
     id: params.id,
     sort,
   })
 
   const previous = useRef(params.id)
+
+  const comments = useMemo(() => {
+    if (queryText.length === 0) {
+      return data
+    }
+
+    return fuzzysort
+      .go(queryText, data, {
+        key: 'data.body',
+      })
+      .map((item) =>
+        create(item.obj, (draft) => {
+          draft.data.depth = 0
+        }),
+      )
+  }, [data, queryText])
 
   useEffect(() => {
     if (previous.current !== params.id) {
@@ -89,6 +117,7 @@ export default function Screen() {
               setSort(next.sort)
             }}
             sort={sort}
+            style={styles.sort}
             type="comment"
           />
         ),
@@ -97,8 +126,6 @@ export default function Screen() {
             <Pressable
               accessibilityHint={a11y('viewCommunity')}
               accessibilityLabel={post.community.name}
-              height="8"
-              justify="center"
               onPress={() => {
                 if (post.community.name.startsWith('u/')) {
                   router.navigate({
@@ -118,9 +145,11 @@ export default function Screen() {
                   pathname: '/communities/[name]',
                 })
               }}
-              px="3"
+              style={styles.title}
             >
-              <Text weight="bold">{post.community.name}</Text>
+              <Text numberOfLines={1} weight="bold">
+                {post.community.name}
+              </Text>
             </Pressable>
           ) : undefined,
       })
@@ -129,11 +158,13 @@ export default function Screen() {
 
   const header = useMemo(
     () => (
-      <View mb="2">
+      <View style={styles.header}>
+        <SearchBox onChange={setQuery} style={styles.search} value={query} />
+
         {post ? (
           <PostCard expanded post={post} />
         ) : (
-          <Spinner m="4" size="large" />
+          <Spinner size="large" style={styles.spinner} />
         )}
 
         {params.commentId ? (
@@ -153,7 +184,7 @@ export default function Screen() {
         ) : null}
       </View>
     ),
-    [comments, params.commentId, post, router],
+    [comments, params.commentId, post, router, query],
   )
 
   const renderItem: ListRenderItem<Comment> = useCallback(
@@ -182,6 +213,24 @@ export default function Screen() {
         <CommentCard
           collapsed={item.data.collapsed}
           comment={item.data}
+          onCollapse={() => {
+            if (!collapsibleComments) {
+              return
+            }
+
+            collapse({
+              commentId: item.data.id,
+            })
+          }}
+          onCollapseThread={() => {
+            if (!collapsibleComments) {
+              return
+            }
+
+            collapseThread({
+              commentId: item.data.id,
+            })
+          }}
           onPress={() => {
             if (!collapsibleComments) {
               return
@@ -194,19 +243,18 @@ export default function Screen() {
         />
       )
     },
-    [collapse, collapsibleComments, post, router, sort],
+    [collapse, collapseThread, collapsibleComments, post, router, sort],
   )
 
   return (
     <>
       <SensorList
-        {...listProps}
         contentContainerStyle={styles.content}
         data={comments}
         extraData={{
           commentId: params.commentId,
         }}
-        ItemSeparatorComponent={() => <View height="2" />}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
         initialScrollIndex={params.commentId ? 0 : undefined}
         keyExtractor={(item) => {
           if (item.type === 'more') {
@@ -216,7 +264,11 @@ export default function Screen() {
           return `${item.type}-${item.data.id}`
         }}
         ListEmptyComponent={() =>
-          isFetching ? <Spinner m="4" size="large" /> : <Empty />
+          isFetching ? (
+            <Spinner size="large" style={styles.spinner} />
+          ) : (
+            <Empty />
+          )
         }
         ListHeaderComponent={header}
         maintainVisibleContentPosition={{
@@ -225,7 +277,6 @@ export default function Screen() {
         ref={list}
         refreshControl={<RefreshControl onRefresh={refetch} />}
         renderItem={renderItem}
-        stickyNav={false}
       />
 
       {replyPost && post ? (
@@ -267,7 +318,6 @@ export default function Screen() {
             list.current?.scrollToIndex({
               animated: true,
               index: next,
-              viewOffset: insets.top + space[8] - (iPad ? space[2] : 0),
             })
           }}
           onPress={() => {
@@ -278,7 +328,6 @@ export default function Screen() {
               list.current?.scrollToIndex({
                 animated: true,
                 index: 0,
-                viewOffset: insets.top + space[8] - (iPad ? space[2] : 0),
               })
 
               return
@@ -297,7 +346,7 @@ export default function Screen() {
             list.current?.scrollToIndex({
               animated: true,
               index: next,
-              viewOffset: insets.top + space[8] - (iPad ? space[2] : 0),
+              viewOffset: 1,
             })
           }}
           side={skipComment}
@@ -318,5 +367,28 @@ const styles = StyleSheet.create((theme) => ({
         },
       },
     },
+  },
+  header: {
+    marginBottom: theme.space[2],
+  },
+  search: {
+    alignSelf: 'center',
+    marginBottom: iPad ? theme.space[2] : undefined,
+    maxWidth: cardMaxWidth,
+    width: '100%',
+  },
+  separator: {
+    height: theme.space[2],
+  },
+  sort: {
+    paddingHorizontal: glass ? theme.space[2] : 0,
+  },
+  spinner: {
+    margin: theme.space[4],
+  },
+  title: {
+    height: theme.space[8],
+    justifyContent: 'center',
+    paddingHorizontal: theme.space[3],
   },
 }))

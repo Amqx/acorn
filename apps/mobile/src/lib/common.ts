@@ -1,31 +1,23 @@
+import { osVersion } from 'expo-device'
 import { isLiquidGlassAvailable } from 'expo-glass-effect'
-import { Platform, StyleSheet } from 'react-native'
-
-export const testFlight = process.env.EXPO_PUBLIC_TEST_FLIGHT === 'true'
+import { Platform } from 'react-native'
+import semver from 'semver'
 
 export const cardMaxWidth = 700
 
-export const iPhone =
-  Platform.OS === 'ios' &&
-  !Platform.isPad &&
-  !Platform.isTV &&
-  !Platform.isVision &&
-  !Platform.isMacCatalyst
+const version = semver.coerce(osVersion) ?? '0'
 
 export const iPad =
   Platform.OS === 'ios' && (Platform.isPad || Platform.isMacCatalyst)
 
 export const glass = isLiquidGlassAvailable()
 
-export const tints = {
-  dark: 'systemThickMaterialDark',
-  light: 'systemThickMaterialLight',
-} as const
+export const iOS26 = Platform.OS === 'ios' && semver.gte(version, '26.0.0')
 
 export const heights = {
   floatingButton: 80,
-  header: 48 + StyleSheet.hairlineWidth,
+  header: glass ? 54 : 48,
   notifications: 56,
   search: 112,
-  tabBar: 48 + StyleSheet.hairlineWidth,
+  tabBar: glass ? 64 : 54,
 } as const

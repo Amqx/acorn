@@ -1,5 +1,6 @@
 import { type SFSymbol, type SymbolWeight } from 'expo-symbols'
 import { type Insets, type StyleProp, type ViewStyle } from 'react-native'
+import { StyleSheet } from 'react-native-unistyles'
 
 import { type ColorToken, type SpaceToken } from '~/styles/tokens'
 
@@ -10,6 +11,7 @@ import { Icon } from '.'
 type Props = {
   color?: ColorToken
   contrast?: boolean
+  disabled?: boolean
   hitSlop?: number | Insets
   icon: SFSymbol
   label: string
@@ -24,6 +26,7 @@ type Props = {
 export function IconButton({
   color = 'accent',
   contrast,
+  disabled,
   hitSlop,
   icon,
   label,
@@ -37,15 +40,11 @@ export function IconButton({
   return (
     <Pressable
       accessibilityLabel={label}
-      align="center"
-      disabled={loading}
-      height={size}
+      disabled={disabled || loading}
       hitSlop={hitSlop}
-      justify="center"
       onLongPress={onLongPress}
       onPress={onPress}
-      style={style}
-      width={size}
+      style={[styles.main(size), style]}
     >
       {loading ? (
         <Spinner
@@ -67,3 +66,12 @@ export function IconButton({
     </Pressable>
   )
 }
+
+const styles = StyleSheet.create((theme) => ({
+  main: (size: SpaceToken) => ({
+    alignItems: 'center',
+    height: theme.space[size],
+    justifyContent: 'center',
+    width: theme.space[size],
+  }),
+}))

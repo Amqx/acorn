@@ -19,12 +19,12 @@ type Variables = {
 }
 
 export function usePostVote() {
-  const { seenOnVote } = usePreferences()
+  const { seenOnVote } = usePreferences(['seenOnVote'])
   const { addPost } = useHistory()
 
   const { isPending, mutate } = useMutation<unknown, Error, Variables>({
     async mutationFn(variables) {
-      const body = new FormData()
+      const body = new URLSearchParams()
 
       body.append('id', addPrefix(variables.postId, 'link'))
       body.append('dir', String(variables.direction))

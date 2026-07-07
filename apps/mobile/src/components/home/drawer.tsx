@@ -1,53 +1,66 @@
-import { type DrawerContentComponentProps } from '@react-navigation/drawer'
-import { useState } from 'react'
+import { View } from 'react-native'
 import { StyleSheet } from 'react-native-unistyles'
 
-import { ListFlags, useList } from '~/hooks/list'
-import { useStageManager } from '~/hooks/stage-manager'
+import { iPad } from '~/lib/common'
+import { usePreferences } from '~/stores/preferences'
+import { oledTheme } from '~/styles/oled'
 
-import { SearchBox } from '../common/search'
-import { View } from '../common/view'
 import { CommunitiesList } from '../communities/list'
 
-type Props = DrawerContentComponentProps
+type Props = {
+  onClose: () => void
+}
 
-export function HomeDrawer({ navigation }: Props) {
-  const listProps = useList(ListFlags.BOTTOM_INSET)
-
-  const stageManager = useStageManager()
+export function HomeDrawer({ onClose }: Props) {
+  const { stickyDrawer, themeOled, themeTint } = usePreferences([
+    'stickyDrawer',
+    'themeOled',
+    'themeTint',
+  ])
 
   styles.useVariants({
-    stageManager,
+    oled: themeOled,
+    sticky: iPad && stickyDrawer,
+    tint: themeTint,
   })
 
-  const [query, setQuery] = useState('')
-
   return (
-    <>
-      <View pr="1" style={styles.search}>
-        <SearchBox onChange={setQuery} value={query} />
-      </View>
-
+    <View style={styles.main}>
       <CommunitiesList
-        listProps={listProps}
+        drawer
         onPress={() => {
-          navigation.closeDrawer()
+          onClose()
         }}
-        query={query}
+        style={styles.content}
       />
-    </>
+    </View>
   )
 }
 
-const styles = StyleSheet.create((_theme, runtime) => ({
-  search: {
+const styles = StyleSheet.create((theme, runtime) => ({
+  content: {
+    marginTop: runtime.insets.top,
+    paddingRight: theme.space[1],
+  },
+  main: {
+    backgroundColor: theme.colors.gray.bgAlt,
+    borderRightColor: theme.colors.gray.border,
+    flex: 1,
     variants: {
-      stageManager: {
-        false: {
-          marginTop: runtime.insets.top,
-        },
+      oled: {
         true: {
-          marginTop: 80,
+          backgroundColor: oledTheme[theme.variant].bg,
+        },
+      },
+      sticky: {
+        true: {
+          borderRightWidth: StyleSheet.hairlineWidth,
+          width: runtime.screen.width * 0.3,
+        },
+      },
+      tint: {
+        true: {
+          backgroundColor: theme.colors.accent.bgAlt,
         },
       },
     },

@@ -1,13 +1,13 @@
-import { MenuView } from '@react-native-menu/menu'
+import Menu from '@expo/ui/community/menu'
+import { type SFSymbol } from 'expo-symbols'
 import { useState } from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
-import { StyleSheet, useUnistyles } from 'react-native-unistyles'
+import { View } from 'react-native'
+import { StyleSheet } from 'react-native-unistyles'
 import { useTranslations } from 'use-intl'
 
-import { Icon } from '~/components/common/icon'
 import { IconButton } from '~/components/common/icon/button'
 import { TextBox } from '~/components/common/text-box'
-import { View } from '~/components/common/view'
 import { type FiltersForm } from '~/hooks/filters'
 
 type Item = 'community' | 'keyword' | 'user'
@@ -21,65 +21,51 @@ export function FilterCard({ index, onRemove }: Props) {
   const t = useTranslations('component.filters.card')
   const a11y = useTranslations('a11y')
 
-  const { theme } = useUnistyles()
-
   const { control } = useFormContext<FiltersForm>()
 
   const [type, setType] = useState<Item>('keyword')
 
   return (
-    <View direction="row" style={styles.main}>
+    <View style={styles.main}>
       <Controller
         control={control}
         name={`filters.${index}.type`}
         render={({ field }) => (
-          <MenuView
-            actions={(['keyword', 'community', 'user'] as const).map(
-              (item) => ({
-                id: item,
-                image:
-                  item === 'community'
-                    ? 'person.2'
-                    : item === 'user'
-                      ? 'person'
-                      : 'tag',
-                imageColor: theme.colors.gray.text,
-                state: item === field.value ? 'on' : undefined,
-                title: t(`type.${item}.label`),
-                titleColor: theme.colors.gray.text,
-              }),
-            )}
+          <Menu
+            actions={[
+              {
+                id: 'keyword',
+                image: icons.keyword,
+                state: field.value === 'keyword' ? 'on' : 'off',
+                title: t('type.keyword.label'),
+              },
+              {
+                id: 'community',
+                image: icons.community,
+                state: field.value === 'community' ? 'on' : 'off',
+                title: t('type.community.label'),
+              },
+              {
+                id: 'user',
+                image: icons.user,
+                state: field.value === 'user' ? 'on' : 'off',
+                title: t('type.user.label'),
+              },
+            ]}
             onPressAction={(event) => {
-              field.onChange(event.nativeEvent.event)
+              const next = event.nativeEvent.event as Item
 
-              setType(event.nativeEvent.event as Item)
+              setType(next)
+
+              field.onChange(next)
             }}
-            shouldOpenOnLongPress={false}
           >
-            <View align="center" direction="row" gap="2" height="7" px="2">
-              <Icon
-                name={
-                  field.value === 'community'
-                    ? 'person.2'
-                    : field.value === 'user'
-                      ? 'person'
-                      : 'tag'
-                }
-                uniProps={($theme) => ({
-                  size: $theme.typography[2].lineHeight,
-                  tintColor: $theme.colors.gray.text,
-                })}
-              />
-
-              <Icon
-                name="chevron.down"
-                uniProps={($theme) => ({
-                  size: $theme.space[4],
-                  tintColor: $theme.colors.gray.textLow,
-                })}
-              />
-            </View>
-          </MenuView>
+            <IconButton
+              icon={icons[field.value]}
+              label={a11y('aboutCommunity')}
+              size="7"
+            />
+          </Menu>
         )}
       />
 
@@ -124,5 +110,13 @@ const styles = StyleSheet.create((theme) => ({
     backgroundColor: theme.colors.gray.ui,
     borderCurve: 'continuous',
     borderRadius: theme.radius[3],
+    flexDirection: 'row',
   },
 }))
+
+const icons = {
+  community: 'person.2',
+  keyword: 'tag',
+  post: 'text.bubble',
+  user: 'person',
+} as const satisfies Record<string, SFSymbol>

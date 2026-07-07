@@ -6,10 +6,13 @@ import { updatePost } from '~/hooks/queries/posts/post'
 import { updatePosts } from '~/hooks/queries/posts/posts'
 import { updateSearch } from '~/hooks/queries/search/search'
 import { isPost } from '~/lib/guards'
-import { addPrefix } from '~/lib/reddit'
-import { reddit } from '~/reddit/api'
+import { prepareMarkdown } from '~/lib/markdown'
+import { addPrefix, removePrefix } from '~/lib/reddit'
+import { REDDIT_URI, reddit } from '~/reddit/api'
 import { CreateCommentSchema } from '~/schemas/comments'
+import { PostSchema } from '~/schemas/post'
 import { transformComment } from '~/transformers/comment'
+import { type Comment } from '~/types/comment'
 
 type Variables = {
   commentId?: string
@@ -21,15 +24,15 @@ export function usePostReply() {
   const t = useTranslations('toasts.comments')
 
   const { isPending, mutateAsync } = useMutation<
-    CreateCommentSchema,
+    Comment | undefined,
     Error,
     Variables
   >({
     async mutationFn(variables) {
-      const body = new FormData()
+      const body = new URLSearchParams()
 
       body.append('api_type', 'json')
-      body.append('text', variables.text)
+      body.append('text', prepareMarkdown(variables.text))
       body.append(
         'thing_id',
         addPrefix(
@@ -38,13 +41,47 @@ export function usePostReply() {
         ),
       )
 
-      const response = await reddit({
-        body,
-        method: 'post',
-        url: '/api/comment',
-      })
+      const comment = CreateCommentSchema.parse(
+        await reddit({
+          body,
+          method: 'post',
+          url: '/api/comment',
+        }),
+      )
 
-      return CreateCommentSchema.parse(response)
+      if (comment.json.errors.length > 0) {
+        const error = comment.json.errors[0]?.[1] ?? t('error')
+
+        throw new Error(error)
+      }
+
+      const payload = comment.json.data?.things[0]?.data
+
+      if (!payload) {
+        return
+      }
+
+      const url = new URL(
+        `/comments/${removePrefix(payload.link)}/comment/${removePrefix(payload.id)}`,
+        REDDIT_URI,
+      )
+
+      url.searchParams.set('sr_detail', 'true')
+
+      const comments = PostSchema.parse(
+        await reddit({
+          url,
+        }),
+      )
+
+      const data = comments[1].data.children.map((item) =>
+        transformComment(item),
+      )
+
+      return data.find((item) => item.data.id === payload.id)
+    },
+    onError(error) {
+      toast.error(error.message)
     },
     onMutate(variables) {
       updatePost(variables.postId, (draft) => {
@@ -62,33 +99,27 @@ export function usePostReply() {
       })
     },
     onSuccess(data, variables) {
-      const payload = data.json.data.things[0]
+      if (data) {
+        updatePost(variables.postId, (draft) => {
+          if (data.data.parentId) {
+            const index = draft.comments.findIndex(
+              (item) => item.data.id === data.data.parentId,
+            )
 
-      if (!payload) {
-        return
-      }
+            const parent = draft.comments[index]
 
-      const comment = transformComment(payload)
+            if (!parent) {
+              return
+            }
 
-      updatePost(variables.postId, (draft) => {
-        if (comment.data.parentId) {
-          const index = draft.comments.findIndex(
-            (item) => item.data.id === comment.data.parentId,
-          )
+            data.data.depth = parent.data.depth + 1
 
-          const parent = draft.comments[index]
-
-          if (!parent) {
-            return
+            draft.comments.splice(index + 1, 0, data)
+          } else {
+            draft.comments.unshift(data)
           }
-
-          comment.data.depth = parent.data.depth + 1
-
-          draft.comments.splice(index + 1, 0, comment)
-        } else {
-          draft.comments.unshift(comment)
-        }
-      })
+        })
+      }
 
       toast.success(t('created'))
     },

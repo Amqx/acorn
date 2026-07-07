@@ -1,5 +1,6 @@
 import { Image } from 'expo-image'
 import { useRouter } from 'expo-router'
+import { View } from 'react-native'
 import { StyleSheet } from 'react-native-unistyles'
 import { useTranslations } from 'use-intl'
 
@@ -10,7 +11,6 @@ import { type Post } from '~/types/post'
 import { Icon } from '../common/icon'
 import { Pressable } from '../common/pressable'
 import { Text } from '../common/text'
-import { View } from '../common/view'
 import { CrossPostFooter } from './footer/crosspost'
 import { PostGalleryCard } from './gallery'
 import { PostLinkCard } from './link'
@@ -21,14 +21,21 @@ type Props = {
   large?: boolean
   post: Post
   recyclingKey?: string
+  onLongPress?: () => void
 }
 
-export function CrossPostCard({ compact, large, post, recyclingKey }: Props) {
+export function CrossPostCard({
+  compact,
+  large,
+  post,
+  recyclingKey,
+  onLongPress,
+}: Props) {
   const router = useRouter()
 
   const a11y = useTranslations('a11y')
 
-  const { themeOled } = usePreferences()
+  const { themeOled } = usePreferences(['themeOled'])
 
   styles.useVariants({
     large,
@@ -40,6 +47,7 @@ export function CrossPostCard({ compact, large, post, recyclingKey }: Props) {
       <Pressable
         accessibilityHint={a11y('viewPost')}
         accessibilityLabel={post.title}
+        onLongPress={onLongPress}
         onPress={() => {
           router.navigate({
             params: {
@@ -58,7 +66,7 @@ export function CrossPostCard({ compact, large, post, recyclingKey }: Props) {
           />
         ) : null}
 
-        <View align="center" justify="center" style={styles.icon}>
+        <View style={styles.icon}>
           <Icon name="arrow.trianglehead.branch" style={styles.crossPost} />
         </View>
       </Pressable>
@@ -69,6 +77,7 @@ export function CrossPostCard({ compact, large, post, recyclingKey }: Props) {
     <Pressable
       accessibilityHint={a11y('viewPost')}
       accessibilityLabel={post.title}
+      onLongPress={onLongPress}
       onPress={() => {
         router.navigate({
           params: {
@@ -83,6 +92,7 @@ export function CrossPostCard({ compact, large, post, recyclingKey }: Props) {
         <PostVideoCard
           crossPost
           nsfw={post.nsfw}
+          onLongPress={onLongPress}
           recyclingKey={recyclingKey}
           spoiler={post.spoiler}
           thumbnail={post.media.images?.[0]?.url}
@@ -91,10 +101,11 @@ export function CrossPostCard({ compact, large, post, recyclingKey }: Props) {
       ) : null}
 
       {post.type === 'image' && post.media.images ? (
-        <View mx="3">
+        <View style={styles.card}>
           <PostGalleryCard
             images={post.media.images}
             nsfw={post.nsfw}
+            onLongPress={onLongPress}
             recyclingKey={recyclingKey}
             spoiler={post.spoiler}
           />
@@ -102,17 +113,18 @@ export function CrossPostCard({ compact, large, post, recyclingKey }: Props) {
       ) : null}
 
       {post.type === 'link' && post.url ? (
-        <View mx="3">
+        <View style={styles.card}>
           <PostLinkCard
             crossPost
             media={post.media.images?.[0]}
+            onLongPress={onLongPress}
             recyclingKey={recyclingKey}
             url={post.url}
           />
         </View>
       ) : null}
 
-      <View gap="3" p="3">
+      <View style={styles.footer}>
         <Text numberOfLines={2} size="2" weight="medium">
           {post.title}
         </Text>
@@ -124,6 +136,9 @@ export function CrossPostCard({ compact, large, post, recyclingKey }: Props) {
 }
 
 const styles = StyleSheet.create((theme) => ({
+  card: {
+    marginHorizontal: theme.space[3],
+  },
   crossPost: {
     transform: [
       {
@@ -131,9 +146,15 @@ const styles = StyleSheet.create((theme) => ({
       },
     ],
   },
+  footer: {
+    gap: theme.space[3],
+    padding: theme.space[3],
+  },
   icon: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
+    alignItems: 'center',
     backgroundColor: theme.colors.black.accentAlpha,
+    justifyContent: 'center',
   },
   image: {
     flex: 1,

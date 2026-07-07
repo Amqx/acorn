@@ -1,29 +1,34 @@
+import { createId } from '@paralleldrive/cuid2'
+import { fetch } from 'expo/fetch'
+import { File, Paths } from 'expo-file-system'
 import { type ImagePickerAsset } from 'expo-image-picker'
+import { FFmpegKit, ReturnCode } from 'ffmpeg-kit-react-native'
 import { z } from 'zod'
 
-import { reddit } from './api'
+import { getUserAgent } from '~/lib/user-agent'
+
+import { getAuth, REDDIT_URI } from './api'
 
 const uploadFileRegex = /<Location>(.*?)<\/Location>/
 
 export async function uploadFile(asset: ImagePickerAsset) {
-  const lease = await prepareUpload(asset)
+  const { mediaId, uploadLease } = await fetchLease(asset)
 
   const body = new FormData()
 
-  for (const field of lease.args.fields) {
-    body.append(field.name, field.value)
+  for (const field of uploadLease.uploadLeaseHeaders) {
+    body.append(field.header, field.value)
   }
 
-  // @ts-expect-error -- go away
-  body.append('file', {
-    name: asset.fileName,
-    type: asset.mimeType,
-    uri: asset.uri,
-  })
+  const file = new File(asset.uri)
+
+  body.append('file', file, asset.fileName ?? undefined)
 
   const headers = new Headers()
 
-  const response = await fetch(`https:${lease.args.action}`, {
+  headers.set('content-type', 'multipart/form-data')
+
+  const response = await fetch(uploadLease.uploadLeaseUrl, {
     body,
     headers,
     method: 'post',
@@ -33,37 +38,109 @@ export async function uploadFile(asset: ImagePickerAsset) {
 
   const matches = uploadFileRegex.exec(xml)
 
-  return matches?.[1]
+  return {
+    mediaId,
+    url: matches?.[1],
+  }
 }
 
-async function prepareUpload(asset: ImagePickerAsset) {
-  const body = new FormData()
-
-  if (asset.fileName) {
-    body.append('filepath', asset.fileName)
-  }
-
-  if (asset.mimeType) {
-    body.append('mimetype', asset.mimeType)
-  }
-
-  const response = await reddit({
-    body,
-    method: 'post',
-    url: '/api/media/asset.json',
-  })
-
-  return PrepareSchema.parse(response)
-}
-
-const PrepareSchema = z.object({
-  args: z.object({
-    action: z.string(),
-    fields: z.array(
-      z.object({
-        name: z.string(),
-        value: z.string(),
+const LeaseSchema = z.object({
+  data: z.object({
+    createMediaUploadLease: z.object({
+      mediaId: z.string(),
+      ok: z.boolean(),
+      uploadLease: z.object({
+        uploadLeaseHeaders: z.array(
+          z.object({
+            header: z.string(),
+            value: z.string(),
+          }),
+        ),
+        uploadLeaseUrl: z.string(),
       }),
-    ),
+    }),
   }),
 })
+
+async function fetchLease(asset: ImagePickerAsset) {
+  const mimetype = asset.mimeType?.split('/').pop()?.toUpperCase()
+
+  if (!mimetype) {
+    throw new Error('File type not allowed')
+  }
+
+  const auth = getAuth()
+
+  if (!auth) {
+    throw new Error('You need to be logged in')
+  }
+
+  const csrf = createId()
+
+  const headers = new Headers()
+
+  headers.set('cookie', `csrf_token=${csrf}; reddit_session=${auth.cookie}`)
+  headers.set('user-agent', getUserAgent())
+  headers.set('content-type', 'application/json')
+
+  const url = new URL('/svc/shreddit/graphql', REDDIT_URI)
+
+  const response = await fetch(url, {
+    body: JSON.stringify({
+      csrf_token: csrf,
+      operation: 'CreateMediaUploadLease',
+      variables: {
+        input: {
+          mimetype,
+        },
+      },
+    }),
+    credentials: 'omit',
+    headers,
+    method: 'post',
+  })
+
+  try {
+    const json = await response.json()
+
+    return LeaseSchema.parse(json).data.createMediaUploadLease
+  } catch (error) {
+    throw new Error('File type not allowed', {
+      cause: error,
+    })
+  }
+}
+
+export async function generateVideoThumbnail(
+  asset: ImagePickerAsset,
+): Promise<ImagePickerAsset> {
+  const file = new File(Paths.cache, `${createId()}.jpg`)
+
+  const session = await FFmpegKit.executeWithArguments([
+    '-y',
+    '-ss',
+    '0',
+    '-i',
+    asset.uri,
+    '-frames:v',
+    '1',
+    '-q:v',
+    '2',
+    file.uri,
+  ])
+
+  const returnCode = await session.getReturnCode()
+
+  if (!ReturnCode.isSuccess(returnCode)) {
+    throw new Error('Unable to generate video thumbnail')
+  }
+
+  return {
+    fileName: file.name,
+    height: asset.height,
+    mimeType: 'image/jpeg',
+    type: 'image',
+    uri: file.uri,
+    width: asset.width,
+  }
+}

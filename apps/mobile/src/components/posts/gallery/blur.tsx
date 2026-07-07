@@ -10,7 +10,12 @@ type Props = {
 
 export function GalleryBlur({ label }: Props) {
   return (
-    <BlurView intensity={100} pointerEvents="none" style={styles.main}>
+    <BlurView
+      intensity={100}
+      pointerEvents="none"
+      style={styles.main}
+      tint="systemThickMaterial"
+    >
       <Icon
         name="exclamationmark.circle.fill"
         uniProps={(theme) => ({
@@ -30,7 +35,7 @@ export function GalleryBlur({ label }: Props) {
 
 const styles = StyleSheet.create((theme) => ({
   main: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: 'center',
     gap: theme.space[4],
     justifyContent: 'center',

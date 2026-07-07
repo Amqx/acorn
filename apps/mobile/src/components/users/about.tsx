@@ -1,10 +1,10 @@
 import { Image } from 'expo-image'
+import { View } from 'react-native'
 import { ScrollView } from 'react-native-gesture-handler'
 import { StyleSheet } from 'react-native-unistyles'
 import { useTranslations } from 'use-intl'
 
 import { useImagePlaceholder } from '~/hooks/image'
-import { type ListProps } from '~/hooks/list'
 import { useFollow } from '~/hooks/mutations/users/follow'
 import { useProfile } from '~/hooks/queries/user/profile'
 
@@ -12,20 +12,18 @@ import { Button } from '../common/button'
 import { Loading } from '../common/loading'
 import { RefreshControl } from '../common/refresh-control'
 import { Text } from '../common/text'
-import { View } from '../common/view'
 import { ProfileCard } from './profile'
 
 type Props = {
-  listProps?: ListProps
   name: string
 }
 
-export function UserAbout({ listProps, name }: Props) {
+export function UserAbout({ name }: Props) {
   const t = useTranslations('component.users.about')
 
   const { profile, refetch } = useProfile(name)
 
-  const { follow } = useFollow()
+  const { follow, isPending } = useFollow()
 
   const placeholder = useImagePlaceholder()
 
@@ -35,22 +33,20 @@ export function UserAbout({ listProps, name }: Props) {
 
   return (
     <ScrollView
-      {...listProps}
       contentContainerStyle={styles.content}
+      contentInsetAdjustmentBehavior="always"
       refreshControl={<RefreshControl onRefresh={refetch} />}
     >
       {profile.banner ? (
-        <View mb="-4">
-          <Image
-            {...placeholder}
-            accessibilityIgnoresInvertColors
-            source={profile.banner}
-            style={styles.banner}
-          />
-        </View>
+        <Image
+          {...placeholder}
+          accessibilityIgnoresInvertColors
+          source={profile.banner}
+          style={styles.banner}
+        />
       ) : null}
 
-      <View align="center" direction="row" gap="4" mt="4" mx="4">
+      <View style={styles.header}>
         {profile.image ? (
           <Image
             accessibilityIgnoresInvertColors
@@ -59,16 +55,16 @@ export function UserAbout({ listProps, name }: Props) {
           />
         ) : null}
 
-        <View flex={1} gap="2">
+        <View style={styles.name}>
           <Text size="6" weight="bold">
-            r/{profile.name}
+            u/{profile.name}
           </Text>
         </View>
       </View>
 
       <ProfileCard profile={profile} />
 
-      <View direction="row" gap="4" mx="4">
+      <View style={styles.footer}>
         <Button
           color={profile.subscribed ? 'red' : 'accent'}
           icon={
@@ -77,6 +73,7 @@ export function UserAbout({ listProps, name }: Props) {
               : 'person.crop.circle.badge.plus'
           }
           label={t(profile.subscribed ? 'unfollow' : 'follow')}
+          loading={isPending}
           onPress={() => {
             follow({
               action: profile.subscribed ? 'unfollow' : 'follow',
@@ -87,7 +84,7 @@ export function UserAbout({ listProps, name }: Props) {
           style={styles.button}
         />
 
-        <View flex={1} />
+        <View style={styles.button} />
       </View>
     </ScrollView>
   )
@@ -97,15 +94,30 @@ const styles = StyleSheet.create((theme) => ({
   banner: {
     aspectRatio: 1280 / 384,
     backgroundColor: theme.colors.gray.ui,
+    marginBottom: -theme.space[4],
   },
   button: {
     flex: 1,
+    justifyContent: 'flex-start',
   },
   content: {
     gap: theme.space[4],
+    paddingBottom: theme.space[4],
   },
   description: {
     marginHorizontal: theme.space[4],
+  },
+  footer: {
+    flexDirection: 'row',
+    gap: theme.space[4],
+    marginHorizontal: theme.space[4],
+  },
+  header: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: theme.space[4],
+    marginHorizontal: theme.space[4],
+    marginTop: theme.space[4],
   },
   image: {
     backgroundColor: theme.colors.gray.ui,
@@ -116,5 +128,9 @@ const styles = StyleSheet.create((theme) => ({
   },
   info: {
     backgroundColor: theme.colors.accent.ui,
+  },
+  name: {
+    flex: 1,
+    gap: theme.space[2],
   },
 }))

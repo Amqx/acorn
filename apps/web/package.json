@@ -5,26 +5,26 @@
   "scripts": {
     "build": "next build",
     "dev": "next dev",
-    "lint:types": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
     "start": "next start"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
-    "next": "16.1.6",
-    "next-intl": "^4.8.2",
-    "react": "19.2.4",
-    "react-dom": "19.2.4",
-    "tailwind-merge": "^3.4.0",
-    "zod": "^4.3.6"
+    "next": "16.2.10",
+    "next-intl": "^4.13.1",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "tailwind-merge": "^3.6.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@radix-ui/colors": "^3.0.0",
-    "@tailwindcss/postcss": "^4.1.18",
-    "@types/node": "^25.2.3",
-    "@types/react": "^19.2.14",
+    "@tailwindcss/postcss": "^4.3.2",
+    "@types/node": "^26.1.0",
+    "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
-    "postcss": "^8.5.6",
-    "tailwindcss": "^4.1.18",
-    "typescript": "^5.9.3"
+    "postcss": "^8.5.16",
+    "tailwindcss": "^4.3.2",
+    "typescript": "^6.0.3"
   }
 }

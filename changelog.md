@@ -1,5 +1,75 @@
 # Changelog
 
+## Upcoming
+
+- added: tab bar minimize toggle
+- changed: ask for permission when enabling save to Acorn album
+- changed: sidebar button moved to the right
+- fixed: following Reddit share links
+- fixed: prioritize community over feed in post list fetch
+- removed: tab bar minimize options
+
+## Build 77
+
+- added: collapse comment thread
+- added: post creation (text, link, image, video)
+- added: privacy for screenshots
+- added: revamped post / comment menus
+- added: screenshot posts / comments
+- added: translate post / comment text
+- added: use custom feeds and communities as default feed
+- changed: drawer now opens from the right
+- fixed: scrolling for long replies
+- fixed: tab list bottom inset
+- fixed: upvote/downvote
+
+## Build 76
+
+- added: gesture to collapse comments
+- added: r/all
+- added: search between post comments
+- changed: search now returns up to 100 results
+- fixed: drawer
+- fixed: text sizing with San Francisco
+
+## Build 75
+
+- added: better image viewing
+- added: iOS 26 tab bar minimize behavior option
+- added: show inline images in modal
+- fixed: multi account auth
+- fixed: Reddit cookie banner preventing auth
+- fixed: system / app theme clashes
+- fixed: text sizing
+
+## Build 74
+
+- added: new content engine
+- added: Reddit auth without client id
+- added: Reddit ^superscript support
+- added: separate font size option for posts / comments
+- fixed: compact mode styling
+- fixed: GIPHY integration
+- fixed: inline image sizing in posts / comments
+- fixed: links in posts / comments
+- fixed: search bar
+- fixed: tab bar issues on iOS older than 26
+- removed: hide header / tab bar on scroll
+- removed(temporary): create posts
+
+## Build 73
+
+- added: GIPHY integration
+- added: iOS 26 search bar
+- added: more Liquid Glass
+- added: new content engine
+- added: per-account search history
+- fixed: chat keyboard interaction
+- fixed: post creation
+- fixed: scroll to next / previous comments
+- removed: r/all
+- removed: bottom tabs customization
+
 ## Build 71-72
 
 - added: settings tab always available

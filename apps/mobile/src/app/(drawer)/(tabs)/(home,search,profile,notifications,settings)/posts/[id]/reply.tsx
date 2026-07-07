@@ -4,22 +4,21 @@ import {
   useNavigation,
   useRouter,
 } from 'expo-router'
-import { useCallback, useState } from 'react'
-import Animated, {
-  useAnimatedKeyboard,
-  useAnimatedStyle,
-} from 'react-native-reanimated'
+import { useHeaderHeight } from 'expo-router/react-navigation'
+import { useCallback, useRef, useState } from 'react'
+import {
+  type FastMarkdownEditorRef,
+  type MarkdownEditorState,
+} from 'react-native-fast-markdown'
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller'
 import { StyleSheet } from 'react-native-unistyles'
 import { useTranslations } from 'use-intl'
 import { z } from 'zod'
 
 import { IconButton } from '~/components/common/icon/button'
-import { Text } from '~/components/common/text'
-import { View } from '~/components/common/view'
-import { TextInput } from '~/components/native/text-input'
+import { MarkdownEditor } from '~/components/markdown/editor'
 import { useCommentEdit } from '~/hooks/mutations/comments/edit'
 import { usePostReply } from '~/hooks/mutations/posts/reply'
-import { htmlToMarkdown } from '~/lib/editor'
 import { type Font, fonts } from '~/lib/fonts'
 import { usePreferences } from '~/stores/preferences'
 
@@ -37,23 +36,24 @@ export default function Screen() {
 
   const params = schema.parse(useLocalSearchParams())
 
-  const { font, fontScaling, systemScaling } = usePreferences()
+  const { font, fontScaling, systemScaling } = usePreferences([
+    'font',
+    'fontScaling',
+    'systemScaling',
+  ])
 
   const t = useTranslations('screen.posts.reply')
   const a11y = useTranslations('a11y')
 
-  const keyboard = useAnimatedKeyboard()
+  const headerHeight = useHeaderHeight()
 
   const reply = usePostReply()
   const edit = useCommentEdit()
 
-  const [text, setText] = useState(
-    params.body ? htmlToMarkdown(params.body) : '',
-  )
+  const editor = useRef<FastMarkdownEditorRef>(null)
 
-  const style = useAnimatedStyle(() => ({
-    paddingBottom: keyboard.height.get(),
-  }))
+  const [state, setState] = useState<MarkdownEditorState>()
+  const [text, setText] = useState(params.body)
 
   useFocusEffect(
     useCallback(() => {
@@ -64,7 +64,7 @@ export default function Screen() {
             label={a11y('createComment')}
             loading={reply.isPending || edit.isPending}
             onPress={async () => {
-              if (text.length === 0) {
+              if (!text) {
                 return
               }
 
@@ -90,45 +90,41 @@ export default function Screen() {
 
               router.back()
             }}
+            size="6"
           />
         ),
+        title: params.user
+          ? t('user', {
+              user: params.user,
+            })
+          : params.commentId
+            ? t('editing')
+            : t('title'),
       })
-    }, [
-      a11y,
-      edit,
-      navigation,
-      params.body,
-      params.commentId,
-      params.id,
-      params.postId,
-      reply,
-      router,
-      text,
-    ]),
+    }, [a11y, edit, navigation, params, reply, router, text, t]),
   )
 
   return (
-    <Animated.View style={[styles.main, style]}>
-      {params.user ? (
-        <View p="4" style={styles.user}>
-          <Text weight="medium">
-            {t('user', {
-              user: params.user,
-            })}
-          </Text>
-        </View>
-      ) : null}
+    <KeyboardAvoidingView
+      behavior="height"
+      keyboardVerticalOffset={headerHeight}
+      style={styles.main(headerHeight)}
+    >
+      <MarkdownEditor.ToolBar
+        editor={editor}
+        state={state}
+        style={styles.toolBar}
+      />
 
-      <TextInput
-        allowFontScaling={systemScaling}
-        autoFocus
-        multiline
-        onChangeText={setText}
+      <MarkdownEditor.Root
+        onChange={setText}
+        onChangeState={setState}
         placeholder={t('placeholder')}
-        style={styles.input(font, fontScaling)}
+        ref={editor}
+        style={styles.input(font, systemScaling ? 1 : fontScaling)}
         value={text}
       />
-    </Animated.View>
+    </KeyboardAvoidingView>
   )
 }
 
@@ -139,12 +135,13 @@ const styles = StyleSheet.create((theme) => ({
     fontFamily: fonts[font],
     fontSize: theme.typography[3].fontSize * scaling,
     lineHeight: theme.typography[3].lineHeight * scaling,
-    padding: theme.space[3],
+    padding: theme.space[4],
   }),
-  main: {
+  main: (marginTop: number) => ({
     flex: 1,
-  },
-  user: {
-    backgroundColor: theme.colors.gray.ui,
+    marginTop,
+  }),
+  toolBar: {
+    backgroundColor: theme.colors.gray.uiAlpha,
   },
 }))

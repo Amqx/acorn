@@ -1,36 +1,39 @@
-import { create as mutative } from 'mutative'
+import { uniqBy } from 'lodash'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
 import { queryClient } from '~/lib/query'
+import { createSelectorHook } from '~/lib/selector'
 import { Store } from '~/lib/store'
 
 export const AUTH_KEY = 'auth'
 
 export type Account = {
-  accessToken: string
-  expiresAt: Date
+  cookie: string
   id: string
-  refreshToken: string
+  modHash: string
 }
 
-export type State = {
+type AuthPayload = {
   accountId?: string
   accounts: Array<Account>
+}
+
+export type State = AuthPayload & {
   add: (account: Account) => void
   remove: (id: string) => void
   reorder: (accounts: Array<Account>) => void
   set: (id: string) => void
 }
 
-export const useAuth = create<State>()(
+export const authStore = create<State>()(
   persist(
     (set, get) => ({
       accounts: [],
       add(account) {
         set({
           accountId: account.id,
-          accounts: updateAccounts(get().accounts, account),
+          accounts: uniqBy([account, ...get().accounts], 'id'),
         })
       },
       remove(id) {
@@ -74,20 +77,21 @@ export const useAuth = create<State>()(
       },
     }),
     {
+      migrate(state, version) {
+        if (version < 1) {
+          const previous = state as State
+
+          previous.accountId = undefined
+          previous.accounts = []
+        }
+
+        return state
+      },
       name: AUTH_KEY,
       storage: new Store(),
+      version: 1,
     },
   ),
 )
 
-export function updateAccounts(accounts: Array<Account>, account: Account) {
-  return mutative(accounts, (draft) => {
-    const index = accounts.findIndex((item) => item.id === account.id)
-
-    if (index >= 0) {
-      draft[index] = account
-    } else {
-      draft.push(account)
-    }
-  })
-}
+export const useAuth = createSelectorHook<AuthPayload, State>(authStore)

@@ -1,12 +1,11 @@
+import Slider from '@expo/ui/community/slider'
 import { ScrollView } from 'react-native-gesture-handler'
+import { StyleSheet } from 'react-native-unistyles'
 import { useTranslations } from 'use-intl'
 
 import { Icon } from '~/components/common/icon'
 import { Menu } from '~/components/common/menu'
-import { Slider } from '~/components/common/slider'
-import { View } from '~/components/common/view'
 import { Themes } from '~/components/settings/themes'
-import { useList } from '~/hooks/list'
 import { type Font, fonts } from '~/lib/fonts'
 import { type PreferencesPayload, usePreferences } from '~/stores/preferences'
 import { type TypographyToken, typography } from '~/styles/tokens'
@@ -15,12 +14,12 @@ export default function Screen() {
   const t = useTranslations('screen.settings.appearance')
 
   const {
-    blurNavigation,
     colorfulComments,
     feedCompact,
     font,
     fontScaling,
-    fontSizeBody,
+    fontSizeCommentBody,
+    fontSizePostBody,
     fontSizeTitle,
     largeThumbnails,
     mediaOnRight,
@@ -29,17 +28,30 @@ export default function Screen() {
     themeOled,
     themeTint,
     update,
-  } = usePreferences()
-
-  const listProps = useList()
+  } = usePreferences([
+    'colorfulComments',
+    'feedCompact',
+    'font',
+    'fontScaling',
+    'fontSizeCommentBody',
+    'fontSizePostBody',
+    'fontSizeTitle',
+    'largeThumbnails',
+    'mediaOnRight',
+    'systemScaling',
+    'theme',
+    'themeOled',
+    'themeTint',
+  ])
 
   const sizes = {
-    fontSizeBody,
+    fontSizeCommentBody,
+    fontSizePostBody,
     fontSizeTitle,
   }
 
   return (
-    <ScrollView {...listProps}>
+    <ScrollView>
       <Menu.Root>
         <Menu.Label>{t('preferences.title')}</Menu.Label>
 
@@ -75,17 +87,6 @@ export default function Screen() {
             update(payload)
           }}
           value={themeTint}
-        />
-
-        <Menu.Switch
-          icon={<Icon name="drop" />}
-          label={t('preferences.blurNavigation')}
-          onChange={(next) => {
-            update({
-              blurNavigation: next,
-            })
-          }}
-          value={blurNavigation}
         />
 
         <Menu.Switch
@@ -172,23 +173,23 @@ export default function Screen() {
         />
 
         {systemScaling ? null : (
-          <View height="8" justify="center" mx="3">
-            <Slider
-              disabled={systemScaling}
-              max={1.2}
-              min={0.8}
-              onChange={(next) => {
-                update({
-                  fontScaling: next,
-                })
-              }}
-              step={0.1}
-              value={fontScaling}
-            />
-          </View>
+          <Slider
+            maximumValue={1.2}
+            minimumValue={0.8}
+            onValueChange={(next) => {
+              update({
+                fontScaling: next,
+              })
+            }}
+            step={0.1}
+            style={styles.slider}
+            value={fontScaling}
+          />
         )}
 
-        {(['fontSizeTitle', 'fontSizeBody'] as const).map((item) => (
+        {(
+          ['fontSizeTitle', 'fontSizePostBody', 'fontSizeCommentBody'] as const
+        ).map((item) => (
           <Menu.Options
             key={item}
             label={t(`fonts.${item}`)}
@@ -223,3 +224,11 @@ export default function Screen() {
     </ScrollView>
   )
 }
+
+const styles = StyleSheet.create((theme) => ({
+  slider: {
+    height: theme.space[8],
+    justifyContent: 'center',
+    marginHorizontal: theme.space[3],
+  },
+}))

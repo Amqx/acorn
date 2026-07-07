@@ -1,31 +1,34 @@
 import { type SFSymbol } from 'expo-symbols'
+import { type StyleProp, View, type ViewStyle } from 'react-native'
+import { StyleSheet } from 'react-native-unistyles'
 import { useTranslations } from 'use-intl'
 
 import { type ColorToken } from '~/styles/tokens'
 
 import { Icon } from './icon'
 import { Text } from './text'
-import { View } from './view'
 
 type Props = {
   color?: ColorToken
   icon?: SFSymbol
   message?: string
+  style?: StyleProp<ViewStyle>
 }
 
 export function Empty({
   color = 'accent',
-  icon = 'face.dashed.fill',
+  icon = 'moon.stars',
   message,
+  style,
 }: Props) {
   const t = useTranslations('component.common.empty')
 
   return (
-    <View align="center" gap="4" justify="center" my="9" p="4">
+    <View style={[styles.main, style]}>
       <Icon
         name={icon}
         uniProps={(theme) => ({
-          size: theme.space[9],
+          size: theme.space[8] * 2,
           tintColor: theme.colors[color].accent,
         })}
       />
@@ -34,3 +37,13 @@ export function Empty({
     </View>
   )
 }
+
+const styles = StyleSheet.create((theme) => ({
+  main: {
+    alignItems: 'center',
+    gap: theme.space[4],
+    justifyContent: 'center',
+    marginVertical: theme.space[9],
+    padding: theme.space[4],
+  },
+}))

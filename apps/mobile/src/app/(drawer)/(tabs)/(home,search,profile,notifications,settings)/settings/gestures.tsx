@@ -2,11 +2,13 @@ import { ScrollView } from 'react-native-gesture-handler'
 import { useTranslations } from 'use-intl'
 
 import { type GestureAction } from '~/components/common/gestures'
-import { GestureIcons } from '~/components/common/gestures/actions'
+import {
+  GestureColors,
+  GestureIcons,
+} from '~/components/common/gestures/actions'
 import { Icon } from '~/components/common/icon'
 import { Menu } from '~/components/common/menu'
 import { type MenuItemOption } from '~/components/common/menu/item/options'
-import { useList } from '~/hooks/list'
 import { useGestures } from '~/stores/gestures'
 
 export default function Screen() {
@@ -26,18 +28,29 @@ export default function Screen() {
     postRightLong,
     postRightShort,
     update,
-  } = useGestures()
+  } = useGestures([
+    'commentLeft',
+    'commentLeftLong',
+    'commentLeftShort',
+    'commentRight',
+    'commentRightLong',
+    'commentRightShort',
+    'postLeft',
+    'postLeftLong',
+    'postLeftShort',
+    'postRight',
+    'postRightLong',
+    'postRightShort',
+  ])
 
-  const listProps = useList()
-
-  const options: Array<MenuItemOption<GestureAction>> = [
+  const postOptions: Array<MenuItemOption<GestureAction>> = [
     {
       label: t('options.upvote'),
       right: (
         <Icon
           name={GestureIcons.upvote}
           uniProps={(theme) => ({
-            tintColor: theme.colors.orange.accent,
+            tintColor: theme.colors[GestureColors.upvote].accent,
           })}
         />
       ),
@@ -49,7 +62,7 @@ export default function Screen() {
         <Icon
           name={GestureIcons.downvote}
           uniProps={(theme) => ({
-            tintColor: theme.colors.violet.accent,
+            tintColor: theme.colors[GestureColors.downvote].accent,
           })}
         />
       ),
@@ -61,7 +74,7 @@ export default function Screen() {
         <Icon
           name={GestureIcons.reply}
           uniProps={(theme) => ({
-            tintColor: theme.colors.blue.accent,
+            tintColor: theme.colors[GestureColors.reply].accent,
           })}
         />
       ),
@@ -73,7 +86,7 @@ export default function Screen() {
         <Icon
           name={GestureIcons.save}
           uniProps={(theme) => ({
-            tintColor: theme.colors.green.accent,
+            tintColor: theme.colors[GestureColors.save].accent,
           })}
         />
       ),
@@ -85,7 +98,7 @@ export default function Screen() {
         <Icon
           name={GestureIcons.hide}
           uniProps={(theme) => ({
-            tintColor: theme.colors.red.accent,
+            tintColor: theme.colors[GestureColors.hide].accent,
           })}
         />
       ),
@@ -97,7 +110,7 @@ export default function Screen() {
         <Icon
           name={GestureIcons.share}
           uniProps={(theme) => ({
-            tintColor: theme.colors.accent.accent,
+            tintColor: theme.colors[GestureColors.share].accent,
           })}
         />
       ),
@@ -105,8 +118,36 @@ export default function Screen() {
     },
   ]
 
+  const commentOptions: Array<MenuItemOption<GestureAction>> = [
+    ...postOptions,
+    {
+      label: t('options.collapse'),
+      right: (
+        <Icon
+          name={GestureIcons.collapse}
+          uniProps={(theme) => ({
+            tintColor: theme.colors[GestureColors.collapse].accent,
+          })}
+        />
+      ),
+      value: 'collapse',
+    },
+    {
+      label: t('options.collapseThread'),
+      right: (
+        <Icon
+          name={GestureIcons.collapseThread}
+          uniProps={(theme) => ({
+            tintColor: theme.colors[GestureColors.collapse].accent,
+          })}
+        />
+      ),
+      value: 'collapseThread',
+    },
+  ]
+
   return (
-    <ScrollView {...listProps}>
+    <ScrollView>
       <Menu.Root>
         <Menu.Label>{t('menu.posts')}</Menu.Label>
 
@@ -130,7 +171,7 @@ export default function Screen() {
                   postLeftShort: next as GestureAction,
                 })
               }}
-              options={options}
+              options={postOptions}
               value={postLeftShort}
             />
 
@@ -141,7 +182,7 @@ export default function Screen() {
                   postLeftLong: next as GestureAction,
                 })
               }}
-              options={options}
+              options={postOptions}
               value={postLeftLong}
             />
           </>
@@ -167,7 +208,7 @@ export default function Screen() {
                   postRightShort: next as GestureAction,
                 })
               }}
-              options={options}
+              options={postOptions}
               value={postRightShort}
             />
 
@@ -178,7 +219,7 @@ export default function Screen() {
                   postRightLong: next as GestureAction,
                 })
               }}
-              options={options}
+              options={postOptions}
               value={postRightLong}
             />
           </>
@@ -208,7 +249,7 @@ export default function Screen() {
                   commentLeftShort: next as GestureAction,
                 })
               }}
-              options={options}
+              options={commentOptions}
               value={commentLeftShort}
             />
 
@@ -219,7 +260,7 @@ export default function Screen() {
                   commentLeftLong: next as GestureAction,
                 })
               }}
-              options={options}
+              options={commentOptions}
               value={commentLeftLong}
             />
           </>
@@ -245,7 +286,7 @@ export default function Screen() {
                   commentRightShort: next as GestureAction,
                 })
               }}
-              options={options}
+              options={commentOptions}
               value={commentRightShort}
             />
 
@@ -256,7 +297,7 @@ export default function Screen() {
                   commentRightLong: next as GestureAction,
                 })
               }}
-              options={options}
+              options={commentOptions}
               value={commentRightLong}
             />
           </>

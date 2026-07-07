@@ -1,15 +1,17 @@
 import { useMutation } from '@tanstack/react-query'
-import { Image } from 'expo-image'
+import { Image, type ImageSource } from 'expo-image'
 // biome-ignore lint/performance/noNamespaceImport: go away
 import * as ImagePicker from 'expo-image-picker'
-import { useCallback, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
+import { View } from 'react-native'
 import { StyleSheet } from 'react-native-unistyles'
+import { toast } from 'sonner-native'
 import { useTranslations } from 'use-intl'
 
 import { type CreatePostForm } from '~/hooks/mutations/posts/create'
-import { uploadFile } from '~/reddit/media'
-import { type Undefined } from '~/types'
+import { generateVideoThumbnail, uploadFile } from '~/reddit/media'
+import { oledTheme } from '~/styles/oled'
 
 import { Focusable } from '../common/focusable'
 import { Icon } from '../common/icon'
@@ -17,41 +19,84 @@ import { IconButton } from '../common/icon/button'
 import { Pressable } from '../common/pressable'
 import { Spinner } from '../common/spinner'
 import { Text } from '../common/text'
-import { View } from '../common/view'
 
-export function SubmissionImage() {
+type Props = {
+  type?: 'image' | 'video'
+  onStatusChange?: (loading: boolean) => void
+}
+
+export function SubmissionImage({ onStatusChange, type = 'image' }: Props) {
   const t = useTranslations('component.submission.image')
   const a11y = useTranslations('a11y')
 
   const { control, setValue } = useFormContext<CreatePostForm>()
 
-  const [image, setImage] = useState<ImagePicker.ImagePickerAsset>()
+  const [asset, setAsset] = useState<ImagePicker.ImagePickerAsset>()
+  const [preview, setPreview] = useState<ImageSource>()
 
-  const { isPending, mutate } = useMutation<
-    Undefined<string>,
-    Error,
-    ImagePicker.ImagePickerAsset
-  >({
-    mutationFn(variables) {
-      return uploadFile(variables)
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reset
+  useEffect(() => {
+    setAsset(undefined)
+    setPreview(undefined)
+  }, [type])
+
+  const { isPending, mutate } = useMutation({
+    async mutationFn() {
+      onStatusChange?.(true)
+
+      const { assets } = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: type === 'video' ? 'videos' : 'images',
+      })
+
+      const $asset = assets?.[0]
+
+      if (!$asset) {
+        return
+      }
+
+      setAsset($asset)
+
+      if ($asset.type === 'video') {
+        const thumbnail = await generateVideoThumbnail($asset)
+
+        setPreview({
+          uri: thumbnail.uri,
+        })
+
+        return {
+          poster: await uploadFile(thumbnail),
+          video: await uploadFile($asset),
+        }
+      }
+
+      setPreview({
+        uri: $asset.uri,
+      })
+
+      return {
+        image: await uploadFile($asset),
+      }
+    },
+    onError(error) {
+      toast.error(error.message)
+
+      setAsset(undefined)
+      setPreview(undefined)
+    },
+    onSettled() {
+      onStatusChange?.(false)
     },
     onSuccess(data) {
-      if (data) {
-        setValue('url', data)
+      if (data?.image?.url) {
+        setValue('url', data.image.url)
+      }
+
+      if (data?.video?.url && data.poster.url) {
+        setValue('url', data.video.url)
+        setValue('posterUrl', data.poster.url)
       }
     },
   })
-
-  const onPress = useCallback(async () => {
-    const result = await ImagePicker.launchImageLibraryAsync()
-
-    if (!result.assets?.[0]) {
-      return
-    }
-
-    setImage(result.assets[0])
-    mutate(result.assets[0])
-  }, [mutate])
 
   return (
     <Controller
@@ -61,22 +106,26 @@ export function SubmissionImage() {
         <Pressable
           accessibilityLabel={a11y('chooseImage')}
           disabled={isPending}
-          flex={1}
-          onPress={onPress}
+          onPress={() => {
+            mutate()
+          }}
+          style={styles.main}
         >
-          <Focusable onFocus={onPress} ref={field.ref} />
+          <Focusable onFocus={mutate} ref={field.ref} />
 
-          {image ? (
+          {asset ? (
             <>
               <Image
                 accessibilityIgnoresInvertColors
-                source={image.uri}
+                source={preview}
                 style={styles.image}
               />
 
               {isPending ? (
-                <View align="center" justify="center" style={styles.loading}>
-                  <Spinner size="large" />
+                <View style={styles.overlay}>
+                  <View style={styles.loading}>
+                    <Spinner />
+                  </View>
                 </View>
               ) : null}
 
@@ -85,21 +134,23 @@ export function SubmissionImage() {
                 icon="trash"
                 label={a11y('removeImage')}
                 onPress={() => {
-                  setImage(undefined)
+                  setAsset(undefined)
                 }}
                 style={styles.delete}
               />
             </>
           ) : (
-            <View align="center" flex={1} gap="4" justify="center">
+            <View style={styles.placeholder}>
               <Icon
-                name="photo"
+                name={type === 'video' ? 'video' : 'photo'}
                 uniProps={(theme) => ({
                   size: theme.space[9],
                 })}
               />
 
-              <Text weight="medium">{t('placeholder')}</Text>
+              <Text weight="medium">{t(`placeholder.${type}`)}</Text>
+
+              <Spinner style={styles.spinner(isPending)} />
             </View>
           )}
         </Pressable>
@@ -110,6 +161,8 @@ export function SubmissionImage() {
 
 const styles = StyleSheet.create((theme, runtime) => ({
   delete: {
+    backgroundColor: oledTheme[theme.variant].bgAlpha,
+    borderTopLeftRadius: theme.radius[6],
     bottom: 0,
     position: 'absolute',
     right: 0,
@@ -123,6 +176,25 @@ const styles = StyleSheet.create((theme, runtime) => ({
     width: runtime.screen.width / 3,
   },
   loading: {
-    ...StyleSheet.absoluteFillObject,
+    backgroundColor: oledTheme[theme.variant].bgAlpha,
+    borderRadius: theme.space[9],
+    padding: theme.space[4],
   },
+  main: {
+    flex: 1,
+  },
+  overlay: {
+    ...StyleSheet.absoluteFill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  placeholder: {
+    alignItems: 'center',
+    flex: 1,
+    gap: theme.space[4],
+    justifyContent: 'center',
+  },
+  spinner: (loading: boolean) => ({
+    opacity: loading ? 1 : 0,
+  }),
 }))

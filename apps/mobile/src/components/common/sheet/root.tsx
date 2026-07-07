@@ -7,29 +7,41 @@ import { glass } from '~/lib/common'
 
 type Props = {
   children: ReactNode
-  dismissible?: boolean
   detents?: Array<SheetDetent>
+  dismissible?: boolean
   onClose?: () => void
   ref?: Ref<TrueSheet>
+  scrollable?: boolean
 }
 
 export function Root({
   children,
+  detents = ['auto'],
   dismissible,
   onClose,
-  detents = ['auto'],
   ref,
+  scrollable,
 }: Props) {
   const { theme } = useUnistyles()
 
   return (
     <TrueSheet
-      backgroundBlur={glass ? undefined : theme.variant}
+      backgroundBlur={
+        !scrollable && glass
+          ? undefined
+          : theme.variant === 'dark'
+            ? 'system-chrome-material-dark'
+            : 'system-chrome-material-light'
+      }
+      cornerRadius={glass ? undefined : theme.radius[6]}
       detents={detents}
       dismissible={dismissible}
       grabber={false}
+      insetAdjustment="never"
+      maxContentWidth={600}
       onWillDismiss={onClose}
       ref={ref}
+      scrollable={scrollable}
     >
       <GestureHandlerRootView style={styles.content}>
         {children}
@@ -41,5 +53,6 @@ export function Root({
 const styles = StyleSheet.create({
   content: {
     flexGrow: 1,
+    paddingHorizontal: glass ? StyleSheet.hairlineWidth : undefined,
   },
 })

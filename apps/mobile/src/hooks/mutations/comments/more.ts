@@ -1,22 +1,24 @@
 import { useMutation } from '@tanstack/react-query'
-import { compact } from 'lodash'
+import { create } from 'mutative'
 
-import { updatePost } from '~/hooks/queries/posts/post'
+import { getPost, updatePost } from '~/hooks/queries/posts/post'
 import { addPrefix } from '~/lib/reddit'
-import { reddit } from '~/reddit/api'
-import { REDDIT_URI } from '~/reddit/config'
-import { fetchUserData, type UserProfiles } from '~/reddit/users'
-import { MoreCommentsSchema } from '~/schemas/comments'
+import { REDDIT_URI, reddit } from '~/reddit/api'
+import { type CommentsSchema, MoreCommentsSchema } from '~/schemas/comments'
+import { PostSchema } from '~/schemas/post'
 import { transformComment } from '~/transformers/comment'
+import { type Comment } from '~/types/comment'
 import { type CommentSort } from '~/types/sort'
 
+const PAGE_SIZE = 20
+
 type Data = {
-  comments: MoreCommentsSchema
-  users: UserProfiles
+  comments: MoreCommentsSchema | Array<CommentsSchema>
 }
 
 type Variables = {
   children: Array<string>
+  depth: number
   id: string
   postId: string
   sort: CommentSort
@@ -25,16 +27,40 @@ type Variables = {
 export function useLoadMoreComments() {
   const { isPending, mutate } = useMutation<Data, Error, Variables>({
     async mutationFn(variables) {
-      const url = new URL('/api/morechildren', REDDIT_URI)
+      if (variables.depth === 0) {
+        const chunks = await Promise.all(
+          variables.children.slice(0, PAGE_SIZE).map(async (id) => {
+            const url = new URL(
+              `/comments/${variables.postId}/comment/${id}`,
+              REDDIT_URI,
+            )
+
+            url.searchParams.set('threaded', 'false')
+            url.searchParams.set('sr_detail', 'true')
+
+            const response = await reddit({
+              url,
+            })
+
+            return PostSchema.parse(response)
+          }),
+        )
+
+        return {
+          comments: chunks.flatMap((chunk) => chunk[1]),
+        }
+      }
+
+      const url = new URL('/api/info.json', REDDIT_URI)
 
       url.searchParams.set('api_type', 'json')
-      url.searchParams.set('link_id', addPrefix(variables.postId, 'link'))
-      url.searchParams.set('sort', variables.sort)
       url.searchParams.set(
-        'children',
-        variables.children.slice(0, 50).join(','),
+        'id',
+        variables.children
+          .slice(0, PAGE_SIZE)
+          .map((id) => addPrefix(id, 'comment'))
+          .join(','),
       )
-      url.searchParams.set('limit_children', 'true')
 
       const response = await reddit({
         url,
@@ -42,17 +68,8 @@ export function useLoadMoreComments() {
 
       const comments = MoreCommentsSchema.parse(response)
 
-      const users = await fetchUserData(
-        ...compact(
-          comments.json.data.things
-            .filter((item) => item.kind === 't1')
-            .map((item) => item.data.author_fullname),
-        ),
-      )
-
       return {
         comments,
-        users,
       }
     },
     onSuccess(data, variables) {
@@ -62,25 +79,40 @@ export function useLoadMoreComments() {
         )
 
         if (index >= 0) {
-          const comments = data.comments.json.data.things.map((item) =>
-            transformComment(item, {
-              users: data.users,
+          const post = getPost(variables.postId)
+
+          const items = Array.isArray(data.comments)
+            ? data.comments.flatMap((item) => item.data.children)
+            : data.comments.data.children
+
+          const comments = items.map((item) => transformComment(item))
+
+          const replies = comments.map((comment) =>
+            create(comment, (draftComment) => {
+              if (!draftComment.data.parentId) {
+                return
+              }
+
+              draftComment.data.depth = getParentDepth(
+                [...comments, ...(post?.comments ?? [])],
+                comment.data.parentId,
+              )
             }),
           )
 
           const more = draft.comments[index]
 
           if (more?.type === 'more') {
-            more.data.children = more.data.children.slice(50)
+            more.data.children = more.data.children.slice(PAGE_SIZE)
 
             if (more.data.children.length > 0) {
-              draft.comments.splice(index, 1, ...comments, more)
+              draft.comments.splice(index, 1, ...replies, more)
 
               return
             }
           }
 
-          draft.comments.splice(index, 1, ...comments)
+          draft.comments.splice(index, 1, ...replies)
         }
       })
     },
@@ -90,4 +122,18 @@ export function useLoadMoreComments() {
     isPending,
     loadMore: mutate,
   }
+}
+
+function getParentDepth(comments: Array<Comment>, parentId?: string): number {
+  if (!parentId) {
+    return 0
+  }
+
+  const parent = comments.find((item) => item.data.id === parentId)
+
+  if (parent?.data.parentId) {
+    return 1 + getParentDepth(comments, parent.data.parentId)
+  }
+
+  return 1
 }

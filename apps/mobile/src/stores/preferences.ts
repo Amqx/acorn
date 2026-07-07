@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware'
 
 import { type FloatingButtonSide } from '~/components/common/floating-button'
 import { type Font } from '~/lib/fonts'
+import { createSelectorHook } from '~/lib/selector'
 import { Store } from '~/lib/store'
 import { type Theme } from '~/styles/themes'
 import { type TypographyToken } from '~/styles/tokens'
@@ -20,7 +21,6 @@ export const PREFERENCES_KEY = 'preferences'
 
 export type PreferencesPayload = {
   autoPlay: boolean
-  blurNavigation: boolean
   blurNsfw: boolean
   blurSpoiler: boolean
   boldTitle: boolean
@@ -36,14 +36,12 @@ export type PreferencesPayload = {
   feedType: FeedType
   font: Font
   fontScaling: number
-  fontSizeBody: TypographyToken
+  fontSizeCommentBody: TypographyToken
+  fontSizePostBody: TypographyToken
   fontSizeTitle: TypographyToken
-  fullscreenDrawer: boolean
   hapticsLoud: boolean
-  hideHeaderOnScroll: boolean
   hidePostActions: boolean
   hideSeen: boolean
-  hideTabBarOnScroll: boolean
   infiniteScrolling: boolean
   intervalCommunityPosts: TopInterval
   intervalFeedPosts: TopInterval
@@ -53,8 +51,10 @@ export type PreferencesPayload = {
   largeThumbnails: boolean
   linkBrowser: boolean
   mediaOnRight: boolean
+  minimizeTabBar: boolean
   oldReddit: boolean
   pictureInPicture: boolean
+  privateScreenshots: boolean
   refreshInterval: number
   rememberSorting: boolean
   replyPost: FloatingButtonSide
@@ -85,11 +85,10 @@ type State = PreferencesPayload & {
   update: (payload: Partial<PreferencesPayload>) => void
 }
 
-export const usePreferences = create<State>()(
+export const preferencesStore = create<State>()(
   persist(
     (set) => ({
       autoPlay: true,
-      blurNavigation: true,
       blurNsfw: true,
       blurSpoiler: true,
       boldTitle: true,
@@ -105,14 +104,12 @@ export const usePreferences = create<State>()(
       feedType: 'home',
       font: 'basis',
       fontScaling: 1,
-      fontSizeBody: '2',
+      fontSizeCommentBody: '2',
+      fontSizePostBody: '3',
       fontSizeTitle: '3',
-      fullscreenDrawer: false,
       hapticsLoud: false,
-      hideHeaderOnScroll: true,
       hidePostActions: false,
       hideSeen: false,
-      hideTabBarOnScroll: true,
       infiniteScrolling: true,
       intervalCommunityPosts: 'hour',
       intervalFeedPosts: 'hour',
@@ -122,8 +119,10 @@ export const usePreferences = create<State>()(
       largeThumbnails: false,
       linkBrowser: true,
       mediaOnRight: true,
+      minimizeTabBar: false,
       oldReddit: false,
       pictureInPicture: false,
+      privateScreenshots: true,
       refreshInterval: 10,
       rememberSorting: true,
       replyPost: 'left',
@@ -157,4 +156,8 @@ export const usePreferences = create<State>()(
       storage: new Store(),
     },
   ),
+)
+
+export const usePreferences = createSelectorHook<PreferencesPayload, State>(
+  preferencesStore,
 )

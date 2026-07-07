@@ -1,6 +1,6 @@
 import { Image } from 'expo-image'
 import { isEmpty, trim } from 'lodash'
-import { type StyleProp, type ViewStyle } from 'react-native'
+import { type StyleProp, View, type ViewStyle } from 'react-native'
 import { StyleSheet } from 'react-native-unistyles'
 import { useTranslations } from 'use-intl'
 
@@ -8,7 +8,6 @@ import { usePreferences } from '~/stores/preferences'
 import { type Flair } from '~/types/flair'
 
 import { Text } from '../common/text'
-import { View } from '../common/view'
 
 export type FlairType = 'text' | 'emoji' | 'both'
 
@@ -29,7 +28,7 @@ export function FlairCard({
 }: Props) {
   const t = useTranslations('component.posts.flair')
 
-  const { showFlair } = usePreferences()
+  const { showFlair } = usePreferences(['showFlair'])
 
   const items = flair.filter((item) =>
     type === 'both' ? true : item.type === type,
@@ -40,13 +39,7 @@ export function FlairCard({
   }
 
   return (
-    <View
-      align="center"
-      direction="row"
-      gap="2"
-      pointerEvents="none"
-      style={style}
-    >
+    <View pointerEvents="none" style={[styles.main, style]}>
       {nsfw ? (
         <View style={[styles.text, styles.nsfw]}>
           <Text contrast size="1" weight="bold">
@@ -76,8 +69,10 @@ export function FlairCard({
               )
             }
 
-            // ​zero width space; some community flairs are crazy
-            if (item.value === '​' || isEmpty(trim(item.value))) {
+            if (
+              item.value === '​' || // ​zero width space; some community flairs are crazy
+              isEmpty(trim(item.value))
+            ) {
               return null
             }
 
@@ -99,6 +94,11 @@ const styles = StyleSheet.create((theme) => ({
     height: theme.typography[1].lineHeight + theme.space[1],
     width: theme.typography[1].lineHeight + theme.space[1],
   },
+  main: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: theme.space[2],
+  },
   nsfw: {
     backgroundColor: theme.colors.red.accent,
   },
@@ -108,7 +108,7 @@ const styles = StyleSheet.create((theme) => ({
   text: {
     backgroundColor: theme.colors.accent.ui,
     borderCurve: 'continuous',
-    borderRadius: theme.radius[2],
+    borderRadius: theme.radius[6],
     paddingHorizontal: theme.space[1] * 1.25,
     paddingVertical: theme.space[1] / 2,
   },

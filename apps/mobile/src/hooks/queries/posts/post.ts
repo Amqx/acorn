@@ -1,16 +1,13 @@
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { type Query, useMutation, useQuery } from '@tanstack/react-query'
 import { eq } from 'drizzle-orm'
-import { compact } from 'lodash'
 import { create, type Draft } from 'mutative'
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 
 import { db } from '~/db'
 import { isComment, isPost } from '~/lib/guards'
 import { queryClient } from '~/lib/query'
 import { removePrefix } from '~/lib/reddit'
-import { reddit } from '~/reddit/api'
-import { REDDIT_URI } from '~/reddit/config'
-import { fetchUserData } from '~/reddit/users'
+import { REDDIT_URI, reddit } from '~/reddit/api'
 import { PostSchema } from '~/schemas/post'
 import { useAuth } from '~/stores/auth'
 import { usePreferences } from '~/stores/preferences'
@@ -50,8 +47,8 @@ type Props = {
 }
 
 export function usePost({ commentId, id, sort }: Props) {
-  const { accountId } = useAuth()
-  const { collapseAutoModerator } = usePreferences()
+  const { accountId } = useAuth(['accountId'])
+  const { collapseAutoModerator } = usePreferences(['collapseAutoModerator'])
 
   const query = useQuery<
     Undefined<PostQueryData>,
@@ -65,7 +62,7 @@ export function usePost({ commentId, id, sort }: Props) {
         return previous
       }
 
-      return getPost(id)
+      return getPlaceholderPost(id)
     },
     async queryFn() {
       const url = new URL(`/comments/${id}`, REDDIT_URI)
@@ -88,21 +85,12 @@ export function usePost({ commentId, id, sort }: Props) {
 
       const response = PostSchema.parse(payload)
 
-      const post = response[0].data.children[0]
+      const [post] = response[0].data.children
       const comments = response[1].data.children
 
       if (!post) {
         throw new Error('Post not found')
       }
-
-      const users = await fetchUserData(
-        post.data.author_fullname,
-        ...compact(
-          response[1].data.children
-            .filter((item) => item.kind === 't1')
-            .map((item) => item.data.author_fullname),
-        ),
-      )
 
       const collapsed = await db
         .select({
@@ -116,12 +104,9 @@ export function usePost({ commentId, id, sort }: Props) {
           transformComment(item, {
             collapseAutoModerator,
             collapsed: collapsed.map((comment) => comment.id),
-            users,
           }),
         ),
-        post: transformPost(post.data, {
-          users,
-        }),
+        post: transformPost(post.data),
       }
     },
     queryKey: [
@@ -135,7 +120,7 @@ export function usePost({ commentId, id, sort }: Props) {
     ],
   })
 
-  const collapse = useMutation<unknown, Error, CollapseVariables>({
+  const { mutate: collapse } = useMutation<unknown, Error, CollapseVariables>({
     async mutationFn(variables) {
       const [exists] = await db
         .select()
@@ -177,6 +162,22 @@ export function usePost({ commentId, id, sort }: Props) {
     },
   })
 
+  const collapseThread = useCallback(
+    (variables: CollapseVariables) => {
+      const parentIds = getParentCommentIds(
+        query.data?.comments ?? [],
+        variables.commentId,
+      )
+
+      const $commentId = parentIds.at(-1) ?? variables.commentId
+
+      collapse({
+        commentId: $commentId,
+      })
+    },
+    [collapse, query.data?.comments],
+  )
+
   const comments = useMemo(() => {
     const items = query.data?.comments ?? []
 
@@ -184,7 +185,8 @@ export function usePost({ commentId, id, sort }: Props) {
   }, [query.data?.comments])
 
   return {
-    collapse: collapse.mutate,
+    collapse,
+    collapseThread,
     comments,
     isFetching: query.isFetching,
     post: query.data?.post,
@@ -192,7 +194,7 @@ export function usePost({ commentId, id, sort }: Props) {
   }
 }
 
-function getPost(id: string): Undefined<PostQueryData> {
+function getPlaceholderPost(id: string): Undefined<PostQueryData> {
   const cache = queryClient.getQueryCache()
 
   const queries = cache.findAll({
@@ -246,6 +248,45 @@ function getPost(id: string): Undefined<PostQueryData> {
   return getPostFromSearch(id)
 }
 
+export function getPost(
+  id: string,
+  sort?: CommentSort,
+): Undefined<PostQueryData> {
+  const cache = queryClient.getQueryCache()
+
+  const queries = cache.findAll({
+    queryKey: [
+      'post',
+      {
+        id,
+      },
+    ] satisfies PostQueryKey,
+  })
+
+  for (const query of queries) {
+    const data = query as unknown as Query<
+      Undefined<PostQueryData>,
+      Error,
+      PostQueryData,
+      PostQueryKey
+    >
+
+    if (!data.state.data) {
+      continue
+    }
+
+    if (sort) {
+      if (data.queryKey[1].sort === sort) {
+        return data.state.data
+      }
+
+      continue
+    }
+
+    return data.state.data
+  }
+}
+
 export function updatePost(
   id: string,
   updater: (draft: Draft<PostQueryData>) => void,
@@ -272,6 +313,24 @@ export function updatePost(
       })
     })
   }
+}
+
+function getParentCommentIds(
+  comments: Array<Comment>,
+  commentId: string,
+): Array<string> {
+  const comment = comments.find(
+    (item) => item.type === 'reply' && item.data.id === commentId,
+  )
+
+  if (!comment?.data.parentId) {
+    return []
+  }
+
+  return [
+    comment.data.parentId,
+    ...getParentCommentIds(comments, comment.data.parentId),
+  ]
 }
 
 function isHidden(comments: Array<Comment>, commentId: string) {

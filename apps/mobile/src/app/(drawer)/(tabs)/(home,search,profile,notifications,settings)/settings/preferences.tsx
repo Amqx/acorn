@@ -1,13 +1,15 @@
+import { requestPermissionsAsync } from 'expo-media-library'
 import { isPictureInPictureSupported } from 'expo-video'
 import { ScrollView } from 'react-native-gesture-handler'
+import { StyleSheet } from 'react-native-unistyles'
 import { useFormatter, useTranslations } from 'use-intl'
 
 import { FloatingButtonSide } from '~/components/common/floating-button'
+import { GestureIcons } from '~/components/common/gestures/actions'
 import { Icon } from '~/components/common/icon'
 import { Logo } from '~/components/common/logo'
 import { Menu } from '~/components/common/menu'
-import { useList } from '~/hooks/list'
-import { iPad } from '~/lib/common'
+import { iOS26, iPad } from '~/lib/common'
 import { getIcon } from '~/lib/icons'
 import { type PreferencesPayload, usePreferences } from '~/stores/preferences'
 
@@ -27,16 +29,15 @@ export default function Screen() {
     feedbackHaptics,
     feedbackSounds,
     feedMuted,
-    fullscreenDrawer,
     hapticsLoud,
-    hideHeaderOnScroll,
     hidePostActions,
     hideSeen,
-    hideTabBarOnScroll,
     infiniteScrolling,
     linkBrowser,
+    minimizeTabBar,
     oldReddit,
     pictureInPicture,
+    privateScreenshots,
     refreshInterval,
     replyPost,
     saveToAlbum,
@@ -51,12 +52,44 @@ export default function Screen() {
     upvoteOnSave,
     userOnTop,
     update,
-  } = usePreferences()
-
-  const listProps = useList()
+  } = usePreferences([
+    'autoPlay',
+    'blurNsfw',
+    'blurSpoiler',
+    'boldTitle',
+    'collapseAutoModerator',
+    'collapsibleComments',
+    'communityOnTop',
+    'dimSeen',
+    'feedbackHaptics',
+    'feedbackSounds',
+    'feedMuted',
+    'hapticsLoud',
+    'hidePostActions',
+    'hideSeen',
+    'infiniteScrolling',
+    'linkBrowser',
+    'minimizeTabBar',
+    'oldReddit',
+    'pictureInPicture',
+    'privateScreenshots',
+    'refreshInterval',
+    'replyPost',
+    'saveToAlbum',
+    'seenOnMedia',
+    'seenOnScroll',
+    'seenOnScrollDelay',
+    'seenOnVote',
+    'showFlair',
+    'skipComment',
+    'stickyDrawer',
+    'unmuteFullscreen',
+    'upvoteOnSave',
+    'userOnTop',
+  ])
 
   return (
-    <ScrollView {...listProps}>
+    <ScrollView>
       <Menu.Root>
         <Menu.Label>{t('browsing.title')}</Menu.Label>
 
@@ -82,7 +115,7 @@ export default function Screen() {
           }}
           options={[
             {
-              label: t('refreshInterval.instant'),
+              label: t('browsing.refreshInterval.instant'),
               right: <Icon name="0.circle.fill" />,
               value: 0,
             },
@@ -119,7 +152,7 @@ export default function Screen() {
               value: 30,
             },
             {
-              label: t('refreshInterval.never'),
+              label: t('browsing.refreshInterval.never'),
               right: <Icon name="infinity.circle.fill" />,
               value: Number.POSITIVE_INFINITY,
             },
@@ -151,37 +184,28 @@ export default function Screen() {
           />
         ) : null}
 
-        <Menu.Switch
-          icon={<Icon name="hand.draw" />}
-          label={t('browsing.fullscreenDrawer')}
-          onChange={(next) => {
-            update({
-              fullscreenDrawer: next,
-            })
-          }}
-          value={fullscreenDrawer}
-        />
+        {iOS26 ? (
+          <Menu.Switch
+            icon={<Icon name="clock" />}
+            label={t('browsing.minimizeTabBar')}
+            onChange={(next) => {
+              update({
+                minimizeTabBar: next,
+              })
+            }}
+            value={minimizeTabBar}
+          />
+        ) : null}
 
         <Menu.Switch
-          icon={<Icon name="inset.filled.topthird.rectangle.portrait" />}
-          label={t('browsing.hideHeaderOnScroll')}
+          icon={<Icon name="hand.raised" />}
+          label={t('browsing.privateScreenshots')}
           onChange={(next) => {
             update({
-              hideHeaderOnScroll: next,
+              privateScreenshots: next,
             })
           }}
-          value={hideHeaderOnScroll}
-        />
-
-        <Menu.Switch
-          icon={<Icon name="inset.filled.bottomthird.rectangle.portrait" />}
-          label={t('browsing.hideTabBarOnScroll')}
-          onChange={(next) => {
-            update({
-              hideTabBarOnScroll: next,
-            })
-          }}
-          value={hideTabBarOnScroll}
+          value={privateScreenshots}
         />
 
         <Menu.Separator />
@@ -259,7 +283,7 @@ export default function Screen() {
         />
 
         <Menu.Switch
-          icon={<Icon name="arrow.down.and.line.horizontal.and.arrow.up" />}
+          icon={<Icon name={GestureIcons.collapse} />}
           label={t('comments.collapsibleComments')}
           onChange={(next) => {
             update({
@@ -397,7 +421,7 @@ export default function Screen() {
           }}
           options={[
             {
-              label: t('refreshInterval.instant'),
+              label: t('browsing.refreshInterval.instant'),
               right: <Icon name="0.circle.fill" />,
               value: 0,
             },
@@ -541,9 +565,18 @@ export default function Screen() {
         />
 
         <Menu.Switch
-          icon={<Logo size={24} />}
-          label={t('media.saveToAlbum')}
-          onChange={(next) => {
+          description={t('media.saveToAlbum.description')}
+          icon={<Logo style={styles.logo} />}
+          label={t('media.saveToAlbum.label')}
+          onChange={async (next) => {
+            if (next) {
+              const { granted } = await requestPermissionsAsync(false)
+
+              if (!granted) {
+                return
+              }
+            }
+
             update({
               saveToAlbum: next,
             })
@@ -604,3 +637,10 @@ export default function Screen() {
     </ScrollView>
   )
 }
+
+const styles = StyleSheet.create((theme) => ({
+  logo: {
+    height: theme.space[5],
+    width: theme.space[5],
+  },
+}))

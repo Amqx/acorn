@@ -1,25 +1,22 @@
+import { Stack } from 'expo-router'
 import { useCallback, useRef, useState } from 'react'
-import { type TextInput } from 'react-native'
+import { View } from 'react-native'
+import { type SearchBarCommands } from 'react-native-screens'
 import { TabView } from 'react-native-tab-view'
 import { StyleSheet } from 'react-native-unistyles'
 import { useDebounce } from 'use-debounce'
 import { useTranslations } from 'use-intl'
 
-import { IconButton } from '~/components/common/icon/button'
 import { Loading } from '~/components/common/loading'
 import { SegmentedControl } from '~/components/common/segmented-control'
-import { TextBox } from '~/components/common/text-box'
-import { View } from '~/components/common/view'
-import { Header } from '~/components/navigation/header'
 import { SortIntervalMenu } from '~/components/posts/sort-interval'
 import { SearchList } from '~/components/search/list'
-import { ListFlags, useList } from '~/hooks/list'
 import { useTabPress } from '~/hooks/tabs'
-import { heights } from '~/lib/common'
-import { useDefaults } from '~/stores/defaults'
+import { glass, heights, iPad } from '~/lib/common'
+import { defaultsStore } from '~/stores/defaults'
 import { usePreferences } from '~/stores/preferences'
 
-const routes = useDefaults
+const routes = defaultsStore
   .getState()
   .searchTabs.filter(({ disabled }) => !disabled)
   .map(({ key }) => ({
@@ -29,15 +26,13 @@ const routes = useDefaults
 
 export default function Screen() {
   const t = useTranslations('screen.search')
-  const a11y = useTranslations('a11y')
 
-  const { intervalSearchPosts, sortSearchPosts } = usePreferences()
+  const { intervalSearchPosts, sortSearchPosts } = usePreferences([
+    'intervalSearchPosts',
+    'sortSearchPosts',
+  ])
 
-  const listProps = useList(ListFlags.ALL, {
-    top: heights.search,
-  })
-
-  const search = useRef<TextInput>(null)
+  const search = useRef<SearchBarCommands>(null)
 
   const [sort, setSort] = useState(sortSearchPosts)
   const [interval, setInterval] = useState(intervalSearchPosts)
@@ -52,105 +47,101 @@ export default function Screen() {
   })
 
   const onChangeQuery = useCallback((next: string) => {
+    search.current?.setText(next)
+
     setQuery(next)
   }, [])
 
   const props = {
-    listProps,
     onChangeQuery,
     query: debounced,
+    style: styles.list,
   } as const
 
   return (
-    <TabView
-      lazy
-      navigationState={{
-        index,
-        routes,
-      }}
-      onIndexChange={setIndex}
-      renderLazyPlaceholder={() => <Loading />}
-      renderScene={({ route }) => {
-        if (route.key === 'post') {
-          return (
-            <SearchList
-              {...props}
-              header={
-                <SortIntervalMenu
-                  interval={interval}
-                  onChange={(next) => {
-                    setSort(next.sort)
+    <>
+      <Stack.SearchBar
+        onChangeText={(event) => {
+          setQuery(event.nativeEvent.text)
+        }}
+        placeholder={t('title')}
+        ref={search}
+      />
 
-                    if (next.interval) {
-                      setInterval(next.interval)
-                    }
-                  }}
-                  sort={sort}
-                  type="search"
-                />
-              }
-              interval={interval}
-              sort={sort}
-              type="post"
-            />
-          )
-        }
+      <TabView
+        lazy
+        navigationState={{
+          index,
+          routes,
+        }}
+        onIndexChange={setIndex}
+        renderLazyPlaceholder={() => <Loading />}
+        renderScene={({ route }) => {
+          if (route.key === 'post') {
+            return (
+              <SearchList
+                {...props}
+                header={
+                  <SortIntervalMenu
+                    interval={interval}
+                    onChange={(next) => {
+                      setSort(next.sort)
 
-        if (route.key === 'community') {
-          return <SearchList {...props} type="community" />
-        }
-
-        return <SearchList {...props} type="user" />
-      }}
-      renderTabBar={({ position }) => (
-        <Header title={t('title')}>
-          <View gap="4" pb="4" px="3">
-            <TextBox
-              autoCapitalize="none"
-              autoComplete="off"
-              autoCorrect={false}
-              onChangeText={setQuery}
-              placeholder={t('title')}
-              ref={search}
-              returnKeyType="search"
-              right={
-                query.length > 0 ? (
-                  <IconButton
-                    color="gray"
-                    icon="xmark.circle.fill"
-                    label={a11y('clearQuery')}
-                    onPress={() => {
-                      setQuery('')
+                      if (next.interval) {
+                        setInterval(next.interval)
+                      }
                     }}
-                    style={styles.clear}
+                    sort={sort}
+                    type="search"
                   />
-                ) : null
-              }
-              style={styles.query}
-              value={query}
-            />
+                }
+                interval={interval}
+                sort={sort}
+                type="post"
+              />
+            )
+          }
 
+          if (route.key === 'community') {
+            return <SearchList {...props} type="community" />
+          }
+
+          return <SearchList {...props} type="user" />
+        }}
+        renderTabBar={({ jumpTo, navigationState }) => (
+          <View style={styles.tabBar}>
             <SegmentedControl
-              items={routes.map(({ key }) => t(`tabs.${key}`))}
-              offset={position}
+              items={routes.map(({ key }) => ({
+                key,
+                label: t(`tabs.${key}`),
+              }))}
               onChange={(next) => {
-                setIndex(next)
+                jumpTo(next)
               }}
+              value={navigationState.routes[navigationState.index]?.key}
             />
           </View>
-        </Header>
-      )}
-    />
+        )}
+      />
+    </>
   )
 }
 
-const styles = StyleSheet.create((theme) => ({
+const styles = StyleSheet.create((theme, runtime) => ({
   clear: {
     height: theme.space[7],
     width: theme.space[7],
   },
+  list: {
+    paddingBottom: heights.tabBar + runtime.insets.bottom,
+  },
   query: {
     backgroundColor: theme.colors.gray.uiActiveAlpha,
     borderWidth: 0,
+  },
+  tabBar: {
+    marginBottom: theme.space[2],
+    marginHorizontal: theme.space[2],
+    paddingTop: iPad || glass ? undefined : theme.space[4],
   },
 }))

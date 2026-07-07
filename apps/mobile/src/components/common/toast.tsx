@@ -2,7 +2,7 @@ import { ActivityIndicator } from 'react-native'
 import { StyleSheet } from 'react-native-unistyles'
 import { Toaster } from 'sonner-native'
 
-import { iPad } from '~/lib/common'
+import { cardMaxWidth, iPad } from '~/lib/common'
 import { type Font, fonts } from '~/lib/fonts'
 import { usePreferences } from '~/stores/preferences'
 import { weights } from '~/styles/text'
@@ -11,7 +11,7 @@ import { space } from '~/styles/tokens'
 import { Icon } from './icon'
 
 export function Toast() {
-  const { font } = usePreferences()
+  const { font } = usePreferences(['font'])
 
   styles.useVariants({
     iPad,
@@ -31,7 +31,7 @@ export function Toast() {
         ),
         info: (
           <Icon
-            name="info.circle"
+            name="info.circle.fill"
             uniProps={(theme) => ({
               tintColor: theme.colors.accent.accent,
             })}
@@ -40,7 +40,7 @@ export function Toast() {
         loading: <ActivityIndicator size={space[5]} />,
         success: (
           <Icon
-            name="checkmark.circle"
+            name="checkmark.circle.fill"
             uniProps={(theme) => ({
               tintColor: theme.colors.green.accent,
             })}
@@ -79,7 +79,7 @@ const styles = StyleSheet.create((theme) => ({
     variants: {
       iPad: {
         true: {
-          maxWidth: 600,
+          maxWidth: cardMaxWidth,
         },
       },
     },

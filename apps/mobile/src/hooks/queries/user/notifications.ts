@@ -2,8 +2,7 @@ import { type InfiniteData, useInfiniteQuery } from '@tanstack/react-query'
 import { create, type Draft } from 'mutative'
 
 import { queryClient } from '~/lib/query'
-import { reddit } from '~/reddit/api'
-import { REDDIT_URI } from '~/reddit/config'
+import { REDDIT_URI, reddit } from '~/reddit/api'
 import { NotificationsSchema } from '~/schemas/notifications'
 import { useAuth } from '~/stores/auth'
 import { transformNotification } from '~/transformers/notification'
@@ -26,7 +25,7 @@ export type NotificationsQueryKey = [
 export type NotificationsQueryData = InfiniteData<Page, Param>
 
 export function useNotifications() {
-  const { accountId } = useAuth()
+  const { accountId } = useAuth(['accountId'])
 
   const {
     data,

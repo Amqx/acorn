@@ -1,4 +1,5 @@
 import { Controller, useFormContext } from 'react-hook-form'
+import { View } from 'react-native'
 import { StyleSheet } from 'react-native-unistyles'
 import { useTranslations } from 'use-intl'
 
@@ -7,11 +8,14 @@ import { type Font, fonts } from '~/lib/fonts'
 import { usePreferences } from '~/stores/preferences'
 
 import { Text } from '../common/text'
-import { View } from '../common/view'
 import { TextInput } from '../native/text-input'
 
 export function SubmissionLink() {
-  const { font, fontScaling, systemScaling } = usePreferences()
+  const { font, fontScaling, systemScaling } = usePreferences([
+    'font',
+    'fontScaling',
+    'systemScaling',
+  ])
 
   const t = useTranslations('component.submission.link')
 
@@ -31,7 +35,7 @@ export function SubmissionLink() {
             autoCorrect={false}
             onChangeText={field.onChange}
             placeholder={t('placeholder')}
-            style={styles.input(font, fontScaling)}
+            style={styles.input(font, systemScaling ? 1 : fontScaling)}
           />
 
           {fieldState.error ? (

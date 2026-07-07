@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router'
-import { useCallback } from 'react'
-import { Share } from 'react-native'
+import { useCallback, useRef, useState } from 'react'
+import { Share, View } from 'react-native'
 import { StyleSheet } from 'react-native-unistyles'
 import { useTranslations } from 'use-intl'
 
@@ -8,16 +8,19 @@ import { useHide } from '~/hooks/moderation/hide'
 import { usePostSave } from '~/hooks/mutations/posts/save'
 import { usePostVote } from '~/hooks/mutations/posts/vote'
 import { cardMaxWidth, iPad } from '~/lib/common'
+import { removePrefix } from '~/lib/reddit'
+import { REDDIT_OLD_URI, REDDIT_URI } from '~/reddit/api'
 import { useGestures } from '~/stores/gestures'
 import { usePreferences } from '~/stores/preferences'
 import { oledTheme } from '~/styles/oled'
 import { type Post } from '~/types/post'
 
+import { Banner } from '../common/banner'
 import { type GestureAction, Gestures } from '../common/gestures'
-import { Html } from '../common/html'
 import { Pressable } from '../common/pressable'
+import { type Sheet } from '../common/sheet'
 import { Text } from '../common/text'
-import { View } from '../common/view'
+import { Markdown } from '../markdown'
 import { PostCompactCard } from './compact'
 import { CrossPostCard } from './crosspost'
 import { FlairCard } from './flair'
@@ -46,8 +49,19 @@ export function PostCard({ expanded, post }: Props) {
     fontSizeTitle,
     mediaOnRight,
     oldReddit,
+    privateScreenshots,
     themeOled,
-  } = usePreferences()
+  } = usePreferences([
+    'boldTitle',
+    'communityOnTop',
+    'dimSeen',
+    'feedCompact',
+    'fontSizeTitle',
+    'mediaOnRight',
+    'oldReddit',
+    'privateScreenshots',
+    'themeOled',
+  ])
   const {
     postLeft,
     postLeftLong,
@@ -55,11 +69,24 @@ export function PostCard({ expanded, post }: Props) {
     postRight,
     postRightLong,
     postRightShort,
-  } = useGestures()
+  } = useGestures([
+    'postLeft',
+    'postLeftLong',
+    'postLeftShort',
+    'postRight',
+    'postRightLong',
+    'postRightShort',
+  ])
+
+  const card = useRef<View>(null)
+  const menu = useRef<Sheet>(null)
+
+  const [capturing, setCapturing] = useState(false)
 
   const dimmed = !expanded && dimSeen && post.seen
 
   styles.useVariants({
+    compact: feedCompact && !expanded,
     dimmed,
     iPad,
     oled: themeOled,
@@ -109,7 +136,7 @@ export function PostCard({ expanded, post }: Props) {
       if (action === 'share') {
         const url = new URL(
           post.permalink,
-          oldReddit ? 'https://old.reddit.com' : 'https://www.reddit.com',
+          oldReddit ? REDDIT_OLD_URI : REDDIT_URI,
         )
 
         Share.share({
@@ -128,10 +155,33 @@ export function PostCard({ expanded, post }: Props) {
     [hide, oldReddit, post.hidden, post.id, post.permalink, router, save, vote],
   )
 
+  function onPress() {
+    if (expanded) {
+      return
+    }
+
+    router.navigate({
+      params: {
+        id: removePrefix(post.id),
+      },
+      pathname: '/posts/[id]',
+    })
+  }
+
+  function onLongPress() {
+    menu.current?.present()
+  }
+
+  const privacy = privateScreenshots && capturing
+
   if (feedCompact && !expanded) {
     return (
       <Gestures
-        data={post}
+        data={{
+          hidden: post.hidden,
+          liked: post.liked,
+          saved: post.saved,
+        }}
         left={{
           enabled: postLeft,
           long: postLeftLong,
@@ -147,15 +197,17 @@ export function PostCard({ expanded, post }: Props) {
         }}
         style={styles.container}
       >
-        <PostMenu post={post}>
+        <PostMenu card={card} onCapturing={setCapturing} post={post} ref={menu}>
           <Pressable
             accessibilityHint={a11y('viewPost')}
             accessibilityLabel={post.title}
-            disabled={expanded}
+            onLongPress={onLongPress}
+            onPress={onPress}
           >
-            <View style={styles.main}>
+            <View collapsable={false} ref={card} style={styles.main}>
               <PostCompactCard
                 post={post}
+                privacy={privacy}
                 side={mediaOnRight ? 'right' : 'left'}
                 style={styles.dimmed}
               />
@@ -168,7 +220,11 @@ export function PostCard({ expanded, post }: Props) {
 
   return (
     <Gestures
-      data={post}
+      data={{
+        hidden: post.hidden,
+        liked: post.liked,
+        saved: post.saved,
+      }}
       left={{
         enabled: postLeft,
         long: postLeftLong,
@@ -184,14 +240,15 @@ export function PostCard({ expanded, post }: Props) {
       }}
       style={styles.container}
     >
-      <PostMenu post={post}>
+      <PostMenu card={card} onCapturing={setCapturing} post={post} ref={menu}>
         <Pressable
           accessibilityHint={a11y('viewPost')}
           accessibilityLabel={post.title}
-          disabled={expanded}
+          onLongPress={onLongPress}
+          onPress={onPress}
         >
-          <View style={styles.main}>
-            <View gap="1" style={styles.dimmed}>
+          <View collapsable={false} ref={card} style={styles.main}>
+            <View style={[styles.header, styles.dimmed]}>
               {communityOnTop ? <PostCommunity post={post} /> : null}
 
               <Text
@@ -209,12 +266,17 @@ export function PostCard({ expanded, post }: Props) {
             </View>
 
             {post.type === 'crosspost' && post.crossPost ? (
-              <CrossPostCard post={post.crossPost} recyclingKey={post.id} />
+              <CrossPostCard
+                onLongPress={onLongPress}
+                post={post.crossPost}
+                recyclingKey={post.id}
+              />
             ) : null}
 
             {post.type === 'video' && post.media.video ? (
               <PostVideoCard
                 nsfw={post.nsfw}
+                onLongPress={onLongPress}
                 recyclingKey={post.id}
                 spoiler={post.spoiler}
                 thumbnail={post.media.images?.[0]?.url}
@@ -226,34 +288,35 @@ export function PostCard({ expanded, post }: Props) {
               <PostGalleryCard
                 images={post.media.images}
                 nsfw={post.nsfw}
+                onLongPress={onLongPress}
                 recyclingKey={post.id}
                 spoiler={post.spoiler}
               />
             ) : null}
 
             {post.type === 'link' && post.url ? (
-              <View>
-                <PostLinkCard
-                  media={post.media.images?.[0]}
-                  recyclingKey={post.id}
-                  url={post.url}
-                />
-              </View>
+              <PostLinkCard
+                media={post.media.images?.[0]}
+                onLongPress={onLongPress}
+                recyclingKey={post.id}
+                url={post.url}
+              />
             ) : null}
 
             {expanded && post.body ? (
-              <Html meta={post.media.meta} type="post">
-                {post.body}
-              </Html>
+              <Markdown meta={post.media.meta}>{post.body}</Markdown>
             ) : null}
 
             <PostFooter
               community={!communityOnTop}
               post={post}
+              privacy={privacy}
               style={styles.dimmed}
             />
 
-            {post.saved ? (
+            {capturing ? <Banner style={styles.banner} /> : null}
+
+            {!privacy && post.saved ? (
               <View pointerEvents="none" style={styles.saved} />
             ) : null}
           </View>
@@ -264,6 +327,10 @@ export function PostCard({ expanded, post }: Props) {
 }
 
 const styles = StyleSheet.create((theme, runtime) => ({
+  banner: {
+    marginBottom: -theme.space[3],
+    marginHorizontal: -theme.space[3],
+  },
   container: {
     alignSelf: 'center',
     overflow: 'hidden',
@@ -290,6 +357,9 @@ const styles = StyleSheet.create((theme, runtime) => ({
       },
     },
   },
+  header: {
+    gap: theme.space[1],
+  },
   main: {
     backgroundColor: theme.colors.gray.ui,
     compoundVariants: [
@@ -302,8 +372,14 @@ const styles = StyleSheet.create((theme, runtime) => ({
       },
     ],
     gap: theme.space[3],
+    overflow: 'hidden',
     padding: theme.space[3],
     variants: {
+      compact: {
+        true: {
+          padding: 0,
+        },
+      },
       oled: {
         true: {
           backgroundColor: oledTheme[theme.variant].bg,

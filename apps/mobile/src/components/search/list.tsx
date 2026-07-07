@@ -1,6 +1,6 @@
-import { type FlashListRef, type ListRenderItem } from '@shopify/flash-list'
-import { type ReactElement, useCallback, useRef } from 'react'
-import { type StyleProp, type ViewStyle } from 'react-native'
+import { type ListRenderItem } from '@shopify/flash-list'
+import { type ReactElement, useCallback } from 'react'
+import { type StyleProp, View, type ViewStyle } from 'react-native'
 import { StyleSheet } from 'react-native-unistyles'
 import { useTranslations } from 'use-intl'
 
@@ -9,11 +9,10 @@ import { Loading } from '~/components/common/loading'
 import { RefreshControl } from '~/components/common/refresh-control'
 import { CommunityCard } from '~/components/communities/card'
 import { PostCard } from '~/components/posts/card'
-import { type ListProps } from '~/hooks/list'
 import { useSearch } from '~/hooks/queries/search/search'
-import { useScrollToTop } from '~/hooks/scroll-top'
 import { useSearchHistory } from '~/hooks/search'
 import { cardMaxWidth, iPad } from '~/lib/common'
+import { listProps } from '~/lib/list'
 import { usePreferences } from '~/stores/preferences'
 import { type Community } from '~/types/community'
 import { type SearchTab } from '~/types/defaults'
@@ -22,7 +21,6 @@ import { type SearchSort, type TopInterval } from '~/types/sort'
 import { type User } from '~/types/user'
 
 import { SensorList } from '../common/sensor/list'
-import { View } from '../common/view'
 import { UserCard } from '../users/card'
 import { SearchHistory } from './history'
 
@@ -32,7 +30,6 @@ type Props = {
   community?: string
   header?: ReactElement
   interval?: TopInterval
-  listProps?: ListProps<Item>
   onChangeQuery: (query: string) => void
   query: string
   sort?: SearchSort
@@ -44,7 +41,6 @@ export function SearchList({
   community,
   header,
   interval,
-  listProps,
   onChangeQuery,
   query,
   sort,
@@ -53,11 +49,10 @@ export function SearchList({
 }: Props) {
   const t = useTranslations('component.search.list')
 
-  const list = useRef<FlashListRef<Item>>(null)
-
-  useScrollToTop(list, listProps)
-
-  const { feedCompact, themeOled } = usePreferences()
+  const { feedCompact, themeOled } = usePreferences([
+    'feedCompact',
+    'themeOled',
+  ])
 
   styles.useVariants({
     compact: feedCompact,
@@ -113,7 +108,7 @@ export function SearchList({
         ) : history.history.length > 0 ? (
           <SearchHistory history={history} onChange={onChangeQuery} />
         ) : (
-          <Empty icon="magnifyingglass" message={t('empty')} />
+          <Empty icon="magnifyingglass" message={t(`empty.${type}`)} />
         )
       }
       ListHeaderComponent={header}
@@ -123,7 +118,6 @@ export function SearchList({
       onScrollBeginDrag={() => {
         history.save(query)
       }}
-      ref={list}
       refreshControl={<RefreshControl onRefresh={refetch} />}
       renderItem={renderItem}
     />

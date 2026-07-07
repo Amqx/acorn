@@ -1,4 +1,6 @@
 import { useRef } from 'react'
+import { type StyleProp, type ViewStyle } from 'react-native'
+import { StyleSheet } from 'react-native-unistyles'
 import { useTranslations } from 'use-intl'
 
 import { IntervalIcons, SortColors, SortIcons } from '~/lib/sort'
@@ -32,6 +34,7 @@ export type SortIntervalMenuData<Type extends SortType> = {
 type Props<Type extends SortType> = SortIntervalMenuData<Type> & {
   onChange: (data: SortIntervalMenuData<Type>) => void
   type: Type
+  style?: StyleProp<ViewStyle>
 }
 
 export function SortIntervalMenu<Type extends SortType>({
@@ -39,6 +42,7 @@ export function SortIntervalMenu<Type extends SortType>({
   onChange,
   sort,
   type,
+  style,
 }: Props<Type>) {
   const t = useTranslations('component.common')
   const a11y = useTranslations('a11y')
@@ -61,15 +65,10 @@ export function SortIntervalMenu<Type extends SortType>({
     <>
       <Pressable
         accessibilityLabel={a11y('changeSorting')}
-        align="center"
-        direction="row"
-        gap="2"
-        height="8"
         onPress={() => {
           sheetSort.current?.present()
         }}
-        px="3"
-        self="end"
+        style={[styles.main, style]}
       >
         <Icon
           name={SortIcons[sort]}
@@ -100,6 +99,7 @@ export function SortIntervalMenu<Type extends SortType>({
 
       <Sheet.Root ref={sheetSort}>
         <Sheet.Header title={t('sort.title')} />
+
         {items.map((item) => (
           <Sheet.Item
             key={item}
@@ -140,6 +140,8 @@ export function SortIntervalMenu<Type extends SortType>({
           />
         ))}
 
+        <Sheet.BottomInset />
+
         <Sheet.Root ref={sheetInterval}>
           <Sheet.Header title={t('interval.title')} />
 
@@ -167,8 +169,21 @@ export function SortIntervalMenu<Type extends SortType>({
               selected={sort === 'top' && item === interval}
             />
           ))}
+
+          <Sheet.BottomInset />
         </Sheet.Root>
       </Sheet.Root>
     </>
   )
 }
+
+const styles = StyleSheet.create((theme) => ({
+  main: {
+    alignItems: 'center',
+    alignSelf: 'flex-end',
+    flexDirection: 'row',
+    gap: theme.space[2],
+    height: theme.space[8],
+    paddingHorizontal: theme.space[3],
+  },
+}))

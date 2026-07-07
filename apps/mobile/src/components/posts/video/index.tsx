@@ -1,4 +1,6 @@
-import { View } from '~/components/common/view'
+import { View } from 'react-native'
+import { StyleSheet } from 'react-native-unistyles'
+
 import { type PostMedia } from '~/types/post'
 
 import { PostLinkCard } from '../link'
@@ -14,6 +16,7 @@ type Props = {
   spoiler?: boolean
   thumbnail?: string
   video: PostMedia
+  onLongPress?: () => void
 }
 
 export function PostVideoCard({
@@ -25,6 +28,7 @@ export function PostVideoCard({
   spoiler,
   thumbnail,
   video,
+  onLongPress,
 }: Props) {
   if (video.provider === 'red-gifs') {
     return (
@@ -33,6 +37,7 @@ export function PostVideoCard({
         crossPost={crossPost}
         large={large}
         nsfw={nsfw}
+        onLongPress={onLongPress}
         recyclingKey={recyclingKey}
         spoiler={spoiler}
         thumbnail={thumbnail}
@@ -48,6 +53,7 @@ export function PostVideoCard({
         crossPost={crossPost}
         large={large}
         nsfw={nsfw}
+        onLongPress={onLongPress}
         recyclingKey={recyclingKey}
         spoiler={spoiler}
         thumbnail={thumbnail}
@@ -64,15 +70,22 @@ export function PostVideoCard({
     : undefined
 
   return (
-    <View mx={crossPost ? '3' : undefined}>
+    <View style={styles.main(crossPost)}>
       <PostLinkCard
         compact={compact}
         crossPost={crossPost}
         large={large}
         media={media}
+        onLongPress={onLongPress}
         recyclingKey={recyclingKey}
         url={video.url}
       />
     </View>
   )
 }
+
+const styles = StyleSheet.create((theme) => ({
+  main: (crossPost?: boolean) => ({
+    marginHorizontal: crossPost ? theme.space[3] : undefined,
+  }),
+}))

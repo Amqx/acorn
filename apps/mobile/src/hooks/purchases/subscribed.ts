@@ -1,31 +1,30 @@
 import { useQuery } from '@tanstack/react-query'
-
-import { testFlight } from '~/lib/common'
-import { purchases } from '~/lib/purchases'
-import { useAuth } from '~/stores/auth'
+import { fetchProducts, getActiveSubscriptions } from 'expo-iap'
+import { isTestFlight } from 'expo-testflight'
 
 export function useSubscribed() {
   const { isLoading, data } = useQuery({
     async queryFn() {
-      if (__DEV__ || testFlight) {
+      if (__DEV__ || isTestFlight) {
         return true
       }
 
-      if (useAuth.getState().accounts.length > 0) {
+      const products = await fetchProducts({
+        skus: ['monthly'],
+        type: 'subs',
+      })
+
+      const product = products?.[0]
+
+      if (!product) {
         return true
       }
 
-      const offerings = await purchases.getOfferings()
+      const subscriptions = await getActiveSubscriptions()
 
-      const item = offerings.current?.availablePackages[0]
-
-      if (!item) {
-        return false
-      }
-
-      const customer = await purchases.getCustomerInfo()
-
-      return customer.activeSubscriptions.includes(item.product.identifier)
+      return subscriptions.some(
+        (item) => item.productId === product.id && item.isActive,
+      )
     },
     queryKey: ['purchases', 'subscribed'],
   })

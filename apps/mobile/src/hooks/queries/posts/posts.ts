@@ -1,15 +1,13 @@
 import { type InfiniteData, useInfiniteQuery } from '@tanstack/react-query'
 import fuzzysort from 'fuzzysort'
-import { compact, uniqBy } from 'lodash'
+import { uniqBy } from 'lodash'
 import { create, type Draft } from 'mutative'
 import { useMemo } from 'react'
 
 import { filterPosts } from '~/lib/filtering'
 import { isComment } from '~/lib/guards'
 import { queryClient } from '~/lib/query'
-import { reddit } from '~/reddit/api'
-import { REDDIT_URI } from '~/reddit/config'
-import { fetchUserData } from '~/reddit/users'
+import { REDDIT_URI, reddit } from '~/reddit/api'
 import { CommentsSchema } from '~/schemas/comments'
 import { PostsSchema, SavedPostsSchema } from '~/schemas/posts'
 import { useAuth } from '~/stores/auth'
@@ -60,7 +58,7 @@ export function usePosts({
   user,
   userType,
 }: PostsProps) {
-  const { accountId } = useAuth()
+  const { accountId } = useAuth(['accountId'])
 
   const {
     data,
@@ -82,10 +80,10 @@ export function usePosts({
 
       const path = user
         ? `/user/${user}/${userType ?? 'submitted'}`
-        : feed
-          ? `/user/${accountId}/m/${feed}/${sort}`
-          : community
-            ? `/r/${community}/${sort}`
+        : community
+          ? `/r/${community}/${sort}`
+          : feed
+            ? `/user/${accountId}/m/${feed}/${sort}`
             : `/${sort}`
 
       const url = new URL(path, REDDIT_URI)
@@ -118,21 +116,9 @@ export function usePosts({
       if (userType === 'comments') {
         const response = CommentsSchema.parse(payload)
 
-        const users = await fetchUserData(
-          ...compact(
-            response.data.children
-              .filter((item) => item.kind === 't1')
-              .map((item) => item.data.author_fullname),
-          ),
-        )
-
         return {
           cursor: response.data.after,
-          posts: response.data.children.map((item) =>
-            transformComment(item, {
-              users,
-            }),
-          ),
+          posts: response.data.children.map((item) => transformComment(item)),
         }
       }
 
@@ -144,7 +130,7 @@ export function usePosts({
         cursor: response.data.after,
         posts: await filterPosts(
           response,
-          Boolean(user) || Boolean(userType)
+          user || userType
             ? false
             : community
               ? community === 'all' || community === 'popular'

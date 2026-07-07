@@ -1,4 +1,3 @@
-import { PortalProvider } from '@gorhom/portal'
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
 import { type ReactNode } from 'react'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
@@ -11,9 +10,8 @@ import { timeZone } from '~/intl'
 import en from '~/intl/en.json'
 import { persistOptions, queryClient } from '~/lib/query'
 
-import { Gallery } from '../gallery'
-import { ThemeProvider } from '../navigation/theme'
-import { HtmlProvider } from './html/provider'
+import { ImageProvider } from '../providers/image'
+import { ThemeProvider } from '../providers/theme'
 import { Toast } from './toast'
 
 type Props = {
@@ -30,15 +28,12 @@ export function Providers({ children }: Props) {
               client={queryClient}
               persistOptions={persistOptions}
             >
-              <PortalProvider>
-                <FocusProvider>
-                  <HtmlProvider>{children}</HtmlProvider>
+              <FocusProvider>
+                <ImageProvider>{children}</ImageProvider>
 
-                  <AccountSwitcher />
-                  <Gallery.Root />
-                  <Toast />
-                </FocusProvider>
-              </PortalProvider>
+                <AccountSwitcher />
+                <Toast />
+              </FocusProvider>
             </PersistQueryClientProvider>
           </ThemeProvider>
         </KeyboardProvider>

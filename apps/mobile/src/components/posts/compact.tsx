@@ -1,4 +1,4 @@
-import { type StyleProp, type ViewStyle } from 'react-native'
+import { type StyleProp, View, type ViewStyle } from 'react-native'
 import { StyleSheet } from 'react-native-unistyles'
 
 import { cardMaxWidth } from '~/lib/common'
@@ -7,7 +7,6 @@ import { type Post } from '~/types/post'
 
 import { Icon } from '../common/icon'
 import { Text } from '../common/text'
-import { View } from '../common/view'
 import { CrossPostCard } from './crosspost'
 import { PostCommunity } from './footer/community'
 import { PostMeta } from './footer/meta'
@@ -18,23 +17,30 @@ import { PostVideoCard } from './video'
 type Props = {
   post: Post
   side?: 'left' | 'right'
+  privacy?: boolean
   style?: StyleProp<ViewStyle>
 }
 
-export function PostCompactCard({ post, side = 'left', style }: Props) {
+export function PostCompactCard({
+  post,
+  side = 'left',
+  privacy,
+  style,
+}: Props) {
   const { boldTitle, communityOnTop, fontSizeTitle, largeThumbnails } =
-    usePreferences()
+    usePreferences([
+      'boldTitle',
+      'communityOnTop',
+      'fontSizeTitle',
+      'largeThumbnails',
+    ])
 
   styles.useVariants({
     large: largeThumbnails,
   })
 
   return (
-    <View
-      direction={side === 'right' ? 'row-reverse' : 'row'}
-      gap="3"
-      style={[styles.main, style]}
-    >
+    <View style={[styles.main(side === 'right'), style]}>
       <View>
         {post.type === 'crosspost' && post.crossPost ? (
           <CrossPostCard
@@ -78,13 +84,13 @@ export function PostCompactCard({ post, side = 'left', style }: Props) {
         ) : null}
 
         {post.type === 'text' ? (
-          <View align="center" justify="center" style={styles.text}>
+          <View style={styles.text}>
             <Icon name="text.alignleft" />
           </View>
         ) : null}
       </View>
 
-      <View align="start" flex={1} gap="2">
+      <View style={styles.content}>
         {communityOnTop ? <PostCommunity post={post} /> : null}
 
         <Text size={fontSizeTitle} weight={boldTitle ? 'bold' : undefined}>
@@ -93,20 +99,29 @@ export function PostCompactCard({ post, side = 'left', style }: Props) {
 
         {communityOnTop ? null : <PostCommunity post={post} />}
 
-        <PostMeta post={post} />
+        <PostMeta post={post} privacy={privacy} />
       </View>
 
-      {post.saved ? <View pointerEvents="none" style={styles.saved} /> : null}
+      {!privacy && post.saved ? (
+        <View pointerEvents="none" style={styles.saved} />
+      ) : null}
     </View>
   )
 }
 
 const styles = StyleSheet.create((theme) => ({
-  main: {
+  content: {
+    flex: 1,
+    gap: theme.space[2],
+  },
+  main: (right: boolean) => ({
     alignSelf: 'center',
+    flexDirection: right ? 'row-reverse' : 'row',
+    gap: theme.space[3],
     maxWidth: cardMaxWidth,
     overflow: 'hidden',
-  },
+    padding: theme.space[3],
+  }),
   saved: {
     backgroundColor: theme.colors.green.accent,
     bottom: -theme.space[6],
@@ -121,8 +136,10 @@ const styles = StyleSheet.create((theme) => ({
     width: theme.space[8],
   },
   text: {
+    alignItems: 'center',
     backgroundColor: theme.colors.gray.uiActive,
     borderCurve: 'continuous',
+    justifyContent: 'center',
     overflow: 'hidden',
     variants: {
       large: {

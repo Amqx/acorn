@@ -3,8 +3,7 @@ import { create, type Draft } from 'mutative'
 
 import { filterCommunities, filterPosts, filterUsers } from '~/lib/filtering'
 import { queryClient } from '~/lib/query'
-import { reddit } from '~/reddit/api'
-import { REDDIT_URI } from '~/reddit/config'
+import { REDDIT_URI, reddit } from '~/reddit/api'
 import { CommunitiesSchema } from '~/schemas/communities'
 import { PostsSchema } from '~/schemas/posts'
 import { UsersSchema } from '~/schemas/users'
@@ -48,7 +47,7 @@ export function useSearch<Type extends SearchTab>({
   sort,
   type,
 }: SearchProps<Type>) {
-  const { accountId } = useAuth()
+  const { accountId } = useAuth(['accountId'])
 
   const { data, isLoading, refetch } = useQuery<
     Undefined<SearchQueryData<Type>>,
@@ -63,7 +62,7 @@ export function useSearch<Type extends SearchTab>({
       const url = new URL(path, REDDIT_URI)
 
       url.searchParams.set('q', query)
-      url.searchParams.set('limit', '50')
+      url.searchParams.set('limit', '100')
       url.searchParams.set(
         'type',
         type === 'community' ? 'sr' : type === 'user' ? 'user' : 'link',

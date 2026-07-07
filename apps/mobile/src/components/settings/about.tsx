@@ -1,12 +1,12 @@
+import { isTestFlight } from 'expo-testflight'
 import { compact } from 'lodash'
+import { View } from 'react-native'
 import { StyleSheet } from 'react-native-unistyles'
 import { useTranslations } from 'use-intl'
 
 import { Logo } from '~/components/common/logo'
 import { Text } from '~/components/common/text'
-import { View } from '~/components/common/view'
 import { useLink } from '~/hooks/link'
-import { testFlight } from '~/lib/common'
 
 import { Button } from '../common/button'
 import { Icon } from '../common/icon'
@@ -22,11 +22,10 @@ export function AboutCard() {
       href: 'https://acorn.blue',
       icon: (
         <PhosphorIcon
-          name="Compass"
+          name="compass-fill"
           uniProps={(theme) => ({
             color: theme.colors.accent.contrast,
           })}
-          weight="fill"
         />
       ),
       label: t('links.web'),
@@ -35,11 +34,10 @@ export function AboutCard() {
       href: 'https://discord.gg/sWzw5GU5RV',
       icon: (
         <PhosphorIcon
-          name="DiscordLogo"
+          name="discord-logo-fill"
           uniProps={(theme) => ({
             color: theme.colors.accent.contrast,
           })}
-          weight="fill"
         />
       ),
       label: t('links.discord'),
@@ -48,16 +46,15 @@ export function AboutCard() {
       href: 'https://github.com/alizahid/acorn',
       icon: (
         <PhosphorIcon
-          name="GithubLogo"
+          name="github-logo-fill"
           uniProps={(theme) => ({
             color: theme.colors.accent.contrast,
           })}
-          weight="fill"
         />
       ),
       label: t('links.github'),
     },
-    testFlight
+    isTestFlight
       ? {
           href: 'https://buymeacoffee.com/acornblue',
           icon: (
@@ -74,49 +71,57 @@ export function AboutCard() {
   ])
 
   return (
-    <View align="center" gap="6" mx="4" my="9">
-      <View align="center" gap="6">
-        <View align="center">
-          <Logo />
+    <View style={styles.main}>
+      <View style={styles.content}>
+        <Logo />
 
-          <Text mt="4" size="8" style={styles.title} weight="bold">
-            {t('header.title')}
-          </Text>
+        <Text mt="4" size="8" style={styles.title} weight="bold">
+          {t('header.title')}
+        </Text>
 
-          <Text highContrast={false} mt="2" size="2" weight="medium">
-            {t('header.description')}
-          </Text>
-        </View>
+        <Text highContrast={false} mt="2" size="2" weight="medium">
+          {t('header.description')}
+        </Text>
+      </View>
 
-        <View
-          align="center"
-          direction="row"
-          gap="4"
-          justify="center"
-          wrap="wrap"
-        >
-          {links.map((link) => (
-            <Button
-              key={link.href}
-              label={link.label}
-              left={link.icon}
-              onPress={() => {
-                handleLink(link.href)
-              }}
-              style={styles.link}
-            />
-          ))}
-        </View>
+      <View style={styles.footer}>
+        {links.map((link) => (
+          <Button
+            key={link.href}
+            label={link.label}
+            left={link.icon}
+            onPress={() => {
+              handleLink(link.href)
+            }}
+            style={styles.link}
+          />
+        ))}
       </View>
     </View>
   )
 }
 
 const styles = StyleSheet.create((theme) => ({
+  content: {
+    alignItems: 'center',
+  },
+  footer: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: theme.space[4],
+    justifyContent: 'center',
+  },
   link: {
     backgroundColor: theme.colors.accent.accent,
     borderCurve: 'continuous',
     borderRadius: theme.space[8],
+  },
+  main: {
+    alignItems: 'center',
+    gap: theme.space[6],
+    marginHorizontal: theme.space[4],
+    marginVertical: theme.space[9],
   },
   title: {
     color: theme.colors.accent.accent,

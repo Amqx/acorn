@@ -19,11 +19,11 @@ type Variables = {
 }
 
 export function useReply() {
-  const { accountId } = useAuth()
+  const { accountId } = useAuth(['accountId'])
 
   const { isPending, mutate } = useMutation<unknown, Error, Variables>({
     async mutationFn(variables) {
-      const body = new FormData()
+      const body = new URLSearchParams()
 
       body.append('api_type', 'json')
       body.append('thing_id', addPrefix(variables.threadId, 'message'))

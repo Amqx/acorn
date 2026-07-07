@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router'
 import { last } from 'lodash'
+import { View } from 'react-native'
 import { StyleSheet } from 'react-native-unistyles'
 import { useFormatter, useNow, useTranslations } from 'use-intl'
 
@@ -10,11 +11,10 @@ import { oledTheme } from '~/styles/oled'
 import { space } from '~/styles/tokens'
 import { type Message } from '~/types/message'
 
-import { Html } from '../common/html'
 import { Icon } from '../common/icon'
 import { Pressable } from '../common/pressable'
 import { Text } from '../common/text'
-import { View } from '../common/view'
+import { Markdown } from '../markdown'
 
 type Props = {
   message: Message
@@ -23,9 +23,9 @@ type Props = {
 export function MessageCard({ message }: Props) {
   const router = useRouter()
 
-  const { accountId } = useAuth()
+  const { accountId } = useAuth(['accountId'])
 
-  const { themeOled } = usePreferences()
+  const { themeOled } = usePreferences(['themeOled'])
 
   const a11y = useTranslations('a11y')
   const f = useFormatter()
@@ -42,14 +42,11 @@ export function MessageCard({ message }: Props) {
 
   const user = message.from === accountId ? message.to : message.from
 
-  const body = (last(message.replies) ?? message).body
+  const { body } = last(message.replies) ?? message
 
   return (
     <Pressable
       accessibilityLabel={a11y('viewThread')}
-      align="center"
-      direction="row"
-      gap="4"
       onPress={() => {
         router.navigate({
           params: {
@@ -66,11 +63,10 @@ export function MessageCard({ message }: Props) {
           })
         }
       }}
-      p="4"
       style={styles.main}
     >
-      <View flex={1} gap="2">
-        <View direction="row" gap="4">
+      <View style={styles.content}>
+        <View style={styles.meta}>
           <Pressable
             accessibilityHint={a11y('viewUser')}
             accessibilityLabel={user}
@@ -94,7 +90,7 @@ export function MessageCard({ message }: Props) {
           </Text>
         </View>
 
-        <Html>{body}</Html>
+        <Markdown>{body}</Markdown>
       </View>
 
       <Icon
@@ -112,8 +108,16 @@ const styles = StyleSheet.create((theme) => ({
   body: {
     marginVertical: theme.space[4],
   },
+  content: {
+    flex: 1,
+    gap: theme.space[2],
+  },
   main: {
+    alignItems: 'center',
     backgroundColor: theme.colors.gray.bgAltAlpha,
+    flexDirection: 'row',
+    gap: theme.space[4],
+    padding: theme.space[4],
     variants: {
       oled: {
         true: {
@@ -126,5 +130,9 @@ const styles = StyleSheet.create((theme) => ({
         },
       },
     },
+  },
+  meta: {
+    flexDirection: 'row',
+    gap: theme.space[4],
   },
 }))

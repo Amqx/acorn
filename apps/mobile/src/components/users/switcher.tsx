@@ -1,15 +1,16 @@
 import { useRouter } from 'expo-router'
 import { useEffect, useRef } from 'react'
 import { FlatList } from 'react-native-gesture-handler'
+import { StyleSheet } from 'react-native-unistyles'
 import { useTranslations } from 'use-intl'
 
+import { glass } from '~/lib/common'
 import { mitter } from '~/lib/mitt'
 import { useAuth } from '~/stores/auth'
 
 import { IconButton } from '../common/icon/button'
 import { Sheet } from '../common/sheet'
 import { Text } from '../common/text'
-import { View } from '../common/view'
 import { AccountCard } from './account'
 
 export function AccountSwitcher() {
@@ -18,7 +19,10 @@ export function AccountSwitcher() {
   const t = useTranslations('component.users.switcher')
   const a11y = useTranslations('a11y')
 
-  const { accountId, accounts, remove, set } = useAuth()
+  const { accountId, accounts, remove, set } = useAuth([
+    'accountId',
+    'accounts',
+  ])
 
   const sheet = useRef<Sheet>(null)
 
@@ -38,9 +42,11 @@ export function AccountSwitcher() {
         right={
           <IconButton
             color="green"
-            icon="plus.circle"
+            icon="plus"
             label={a11y('addAccount')}
-            onPress={() => {
+            onPress={async () => {
+              await sheet.current?.dismiss()
+
               router.navigate({
                 params: {
                   mode: 'dismissible',
@@ -48,20 +54,16 @@ export function AccountSwitcher() {
                 pathname: '/sign-in',
               })
             }}
+            size={glass ? '9' : '8'}
           />
         }
+        style={styles.header}
         title={t('title')}
       />
 
       <FlatList
+        contentContainerStyle={styles.content}
         data={accounts}
-        ListFooterComponent={
-          <View p="4">
-            <Text align="center" size="2">
-              {t('description')}
-            </Text>
-          </View>
-        }
         renderItem={({ item }) => (
           <AccountCard
             account={item}
@@ -80,6 +82,21 @@ export function AccountSwitcher() {
         )}
         scrollEnabled={false}
       />
+
+      <Text align="center" m="4" size="2">
+        {t('description')}
+      </Text>
+
+      <Sheet.BottomInset />
     </Sheet.Root>
   )
 }
+
+const styles = StyleSheet.create((theme) => ({
+  content: {
+    paddingHorizontal: 1,
+  },
+  header: {
+    height: theme.space[glass ? 9 : 8],
+  },
+}))

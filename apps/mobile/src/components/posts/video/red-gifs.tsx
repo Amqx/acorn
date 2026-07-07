@@ -1,7 +1,7 @@
+import { View } from 'react-native'
 import { StyleSheet } from 'react-native-unistyles'
 
 import { Spinner } from '~/components/common/spinner'
-import { View } from '~/components/common/view'
 import { useRedGifs } from '~/hooks/red-gifs'
 import { type PostMedia } from '~/types/post'
 
@@ -16,6 +16,7 @@ type Props = {
   spoiler?: boolean
   thumbnail?: string
   video: PostMedia
+  onLongPress?: () => void
 }
 
 export function RedGifsVideo({
@@ -27,6 +28,7 @@ export function RedGifsVideo({
   spoiler,
   thumbnail,
   video,
+  onLongPress,
 }: Props) {
   styles.useVariants({
     compact,
@@ -42,6 +44,7 @@ export function RedGifsVideo({
         crossPost={crossPost}
         large={large}
         nsfw={nsfw}
+        onLongPress={onLongPress}
         recyclingKey={recyclingKey}
         spoiler={spoiler}
         thumbnail={thumbnail}
@@ -55,11 +58,7 @@ export function RedGifsVideo({
 
   return (
     <View style={styles.main}>
-      <View
-        align="center"
-        justify="center"
-        style={styles.video(video.width / video.height, compact)}
-      >
+      <View style={styles.video(video.width / video.height, compact)}>
         <Spinner />
       </View>
     </View>
@@ -96,6 +95,8 @@ const styles = StyleSheet.create((theme) => ({
     },
   },
   video: (aspectRatio: number, compact?: boolean) => ({
+    alignItems: 'center',
     aspectRatio: compact ? 1 : aspectRatio,
+    justifyContent: 'center',
   }),
 }))

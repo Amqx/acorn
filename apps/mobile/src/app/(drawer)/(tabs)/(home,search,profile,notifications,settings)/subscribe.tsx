@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router'
 import { type SFSymbol } from 'expo-symbols'
 import { useEffect } from 'react'
+import { View } from 'react-native'
 import { StyleSheet } from 'react-native-unistyles'
 import { useFormatter, useTranslations } from 'use-intl'
 
@@ -9,13 +10,11 @@ import { Icon } from '~/components/common/icon'
 import { Logo } from '~/components/common/logo'
 import { Spinner } from '~/components/common/spinner'
 import { Text } from '~/components/common/text'
-import { View } from '~/components/common/view'
 import { usePlan } from '~/hooks/purchases/plan'
 import { useRestore } from '~/hooks/purchases/restore'
 import { useSubscribe } from '~/hooks/purchases/subscribe'
 import { useSubscribed } from '~/hooks/purchases/subscribed'
 import { iPad } from '~/lib/common'
-import { fonts } from '~/lib/fonts'
 
 export default function Screen() {
   const router = useRouter()
@@ -36,29 +35,18 @@ export default function Screen() {
   }, [subscribed, router])
 
   return (
-    <View flex={1} gap="8" justify="center" py="8" style={styles.main}>
-      <View align="center" gap="4">
+    <View style={styles.main}>
+      <View style={styles.header}>
         <Logo />
-
-        <Text accent color="accent" size="8" weight="bold">
-          {t('title')}
-        </Text>
       </View>
 
-      <View align="center" justify="center" style={styles.price}>
+      <View style={styles.price}>
         {plan ? (
           <>
-            <Text
-              mt="2"
-              size="8"
-              style={{
-                fontFamily: fonts.apercu,
-              }}
-              tabular
-              weight="bold"
-            >
-              {f.number(plan.product.price, {
-                currency: plan.product.currencyCode,
+            <Text mt="1" size="7" tabular weight="bold">
+              {f.number(plan.price ?? 0, {
+                currency: plan.currency,
+                currencyDisplay: 'code',
                 style: 'currency',
               })}
             </Text>
@@ -72,39 +60,47 @@ export default function Screen() {
         )}
       </View>
 
-      <View direction="row" gap="4" px={iPad ? '8' : '4'}>
-        {(
-          [
-            [1, 2, 3],
-            [4, 5, 6],
-          ] as const
-        ).map((section) => (
-          <View flex={1} gap="4" key={String(section)}>
-            {section.map((key) => (
-              <View direction="row" gap="4" key={key}>
-                <Icon name={icons[key]} />
+      <View style={styles.features}>
+        {([1, 2, 3, 4, 5, 6] as const).map((key) => (
+          <View key={key} style={styles.feature}>
+            <Icon
+              name={icons[key]}
+              uniProps={(theme) => ({
+                tintColor: theme.colors.orange.accent,
+              })}
+            />
 
-                <View flex={1}>
-                  <Text weight="medium">{t(`feature.${key}`)}</Text>
-                </View>
-              </View>
-            ))}
+            <Text style={styles.label} weight="medium">
+              {t(`feature.${key}`)}
+            </Text>
           </View>
         ))}
       </View>
 
-      <View gap="4" mx={iPad ? '8' : '4'}>
+      <View style={styles.footer}>
         <Button
-          label={t('subscribe')}
+          color="orange"
+          disabled={!plan}
+          label={t(
+            plan?.subscriptionOffers?.length
+              ? 'footer.trial'
+              : 'footer.subscribe',
+          )}
           loading={subscribing}
           onPress={() => {
-            subscribe()
+            if (!plan) {
+              return
+            }
+
+            subscribe({
+              plan,
+            })
           }}
         />
 
         <Button
           color="blue"
-          label={t('restore')}
+          label={t('footer.restore')}
           loading={restoring}
           onPress={() => {
             restore()
@@ -116,15 +112,42 @@ export default function Screen() {
 }
 
 const styles = StyleSheet.create((theme, runtime) => ({
+  feature: {
+    flexDirection: 'row',
+    gap: theme.space[4],
+  },
   features: {
-    width: '100%',
+    gap: theme.space[4],
+    marginHorizontal: theme.space[iPad ? 8 : 4],
+  },
+  footer: {
+    gap: theme.space[4],
+    marginHorizontal: theme.space[iPad ? 8 : 4],
+  },
+  header: {
+    alignItems: 'center',
+    gap: theme.space[4],
+    marginHorizontal: theme.space[iPad ? 8 : 4],
+  },
+  label: {
+    flex: 1,
   },
   main: {
+    flex: 1,
+    gap: theme.space[8],
+    justifyContent: 'center',
     marginBottom: runtime.insets.bottom,
+    paddingVertical: theme.space[8],
   },
   price: {
-    backgroundColor: theme.colors.accent.ui,
+    alignItems: 'center',
+    backgroundColor: theme.colors.orange.ui,
     height: theme.space[8] * 2,
+    justifyContent: 'center',
+  },
+  section: {
+    flex: 1,
+    gap: theme.space[4],
   },
   subscribe: {
     alignSelf: 'center',
