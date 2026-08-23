@@ -2,50 +2,44 @@ name: Build/ release IPA
 
 on:
   workflow_dispatch:
-    inputs:
-      manual_tag:
-        description: 'Tag for the build'
-        required: true
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: macos-26
 
     steps:
       - uses: actions/checkout@v4
 
+      - uses: oven-sh/setup-bun@v2
+
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
 
-      - name: Install EAS
-        run: npm install -g eas-cli
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Caches/CocoaPods
+          key: ${{ runner.os }}-pods-${{ hashFiles('apps/mobile/package.json') }}
+          restore-keys: ${{ runner.os }}-pods-
 
-      - name: Trigger EAS build
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build unsigned IPA
         working-directory: apps/mobile
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: |
-          eas build --platform ios --profile preview --non-interactive --wait
+        run: ./scripts/build-unsigned-ipa.sh
 
-      - name: Get latest build artifact
-        working-directory: apps/mobile
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: |
-          eas build:list --platform ios --limit 1 --status finished --json > builds.json
-          ARTIFACT_URL=$(node -e "const b=require('./builds.json'); console.log(b[0].artifacts.buildUrl)")
-          curl -L "$ARTIFACT_URL" -o Acorn.ipa
-          
       - name: Create GH release
         uses: softprops/action-gh-release@v2
         with:
-          files: apps/mobile/Acorn.ipa
-          tag_name: ${{ github.event.inputs.manual_tag }}
-          name: Release ${{ github.event.inputs.manual_tag }}
+          files: apps/mobile/build/Acorn-unsigned.ipa
+          name: Built IPA
+          body: |
+            This IPA is **unsigned** — sideload it with Sideloadly, AltStore or SideStore,
+            or re-sign it yourself before installing.
           generate_release_notes: true
           draft: false
-          prelease: false
+          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          
