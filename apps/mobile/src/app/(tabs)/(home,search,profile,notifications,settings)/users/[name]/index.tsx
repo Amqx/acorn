@@ -23,7 +23,7 @@ import {
   type SortIntervalMenuData,
 } from '~/components/posts/sort-interval'
 import { useListProps } from '~/hooks/list'
-import { iPad } from '~/lib/common'
+import { iOS26 } from '~/lib/common'
 import { usePreferences } from '~/stores/preferences'
 import { UserTab } from '~/types/user'
 
@@ -59,10 +59,6 @@ export default function Screen() {
 
   const t = useTranslations('screen.users.user')
   const a11y = useTranslations('a11y')
-
-  styles.useVariants({
-    iPad,
-  })
 
   const [index, setIndex] = useState(0)
   const [query, setQuery] = useState('')
@@ -222,16 +218,7 @@ const styles = StyleSheet.create((theme) => ({
     flexDirection: 'row',
   },
   tabBar: (headerHeight: number) => ({
-    margin: theme.space[4],
-    variants: {
-      iPad: {
-        false: {
-          marginTop: headerHeight + theme.space[4],
-        },
-        true: {
-          marginTop: headerHeight,
-        },
-      },
-    },
+    padding: theme.space[4],
+    paddingTop: headerHeight + (iOS26 ? 0 : theme.space[4]),
   }),
 }))

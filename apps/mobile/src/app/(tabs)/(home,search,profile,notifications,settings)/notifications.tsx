@@ -114,7 +114,7 @@ export default function Screen() {
 
 const styles = StyleSheet.create((theme) => ({
   tabBar: (headerHeight: number) => ({
-    margin: theme.space[4],
-    marginTop: headerHeight + (iOS26 ? 0 : theme.space[4]),
+    padding: theme.space[4],
+    paddingTop: headerHeight + (iOS26 ? 0 : theme.space[4]),
   }),
 }))

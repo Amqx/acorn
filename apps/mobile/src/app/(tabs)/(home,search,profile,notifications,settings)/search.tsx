@@ -177,7 +177,7 @@ const styles = StyleSheet.create((theme, runtime) => ({
   },
   search: {
     borderCurve: 'continuous',
-    borderRadius: iOS26 ? theme.space[8] : theme.space[2],
+    borderRadius: theme.space[8],
     variants: {
       glass: {
         false: {
@@ -188,14 +188,19 @@ const styles = StyleSheet.create((theme, runtime) => ({
   },
   tabBar: (headerHeight: number, tabBarHeight: number) => ({
     gap: theme.space[4],
-    margin: theme.space[4],
+    padding: theme.space[4],
     variants: {
       iPad: {
         false: {
-          marginTop: headerHeight + runtime.insets.top,
+          paddingTop:
+            headerHeight + runtime.insets.top + (iOS26 ? 0 : theme.space[4]),
         },
         true: {
-          marginTop: headerHeight + tabBarHeight + runtime.insets.top,
+          paddingTop:
+            headerHeight +
+            tabBarHeight +
+            runtime.insets.top +
+            (iOS26 ? 0 : theme.space[4]),
         },
       },
     },
