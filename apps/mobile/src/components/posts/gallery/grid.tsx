@@ -1,5 +1,6 @@
+import { useRecyclingState } from '@shopify/flash-list'
 import { Image } from 'expo-image'
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { View } from 'react-native'
 import { FlatList } from 'react-native-gesture-handler'
 import { Gallery } from 'react-native-jet-gallery'
@@ -34,6 +35,15 @@ export function ImageGrid({
   const t = useTranslations('component.posts.gallery')
 
   const { rt } = useUnistyles()
+
+  const list = useRef<FlatList<PostMedia>>(null)
+
+  useRecyclingState(recyclingKey, [recyclingKey], () => {
+    list.current?.scrollToOffset({
+      animated: false,
+      offset: 0,
+    })
+  })
 
   const { blurNsfw, blurSpoiler } = usePreferences(
     useShallow((state) => ({
@@ -80,8 +90,6 @@ export function ImageGrid({
         <Gallery.Image
           index={0}
           onLongPress={(event) => {
-            console.log('foo')
-
             MediaMenu.call({
               type: 'image',
               url: event.url,
@@ -124,13 +132,12 @@ export function ImageGrid({
           onLayout={(event) => {
             setWidth(event.nativeEvent.layout.width)
           }}
+          ref={list}
           renderItem={({ index, item }) => (
             <>
               <Gallery.Image
                 index={index}
                 onLongPress={(event) => {
-                  console.log('foo')
-
                   MediaMenu.call({
                     type: 'image',
                     url: event.url,

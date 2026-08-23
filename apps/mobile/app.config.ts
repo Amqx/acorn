@@ -10,7 +10,6 @@ import expoSecureStore from 'expo-secure-store/plugin'
 import expoSplashScreen from 'expo-splash-screen/plugin'
 import expoSqlite from 'expo-sqlite/plugin'
 import expoWebBrowser from 'expo-web-browser/plugin'
-import { withJetVideo } from 'react-native-jet-video/expo-plugin'
 
 export default function getConfig(context: ConfigContext): ExpoConfig {
   const name = 'Acorn'
@@ -20,6 +19,7 @@ export default function getConfig(context: ConfigContext): ExpoConfig {
     '@bacons/apple-targets',
     'expo-iap',
     'react-native-bottom-tabs',
+    'react-native-video',
     expoRouter(),
     expoLocalization(),
     expoSecureStore(),
@@ -58,10 +58,6 @@ export default function getConfig(context: ConfigContext): ExpoConfig {
     }),
     expoScreenOrientation({
       initialOrientation: 'PORTRAIT_UP',
-    }),
-    withJetVideo({
-      supportsBackgroundPlayback: true,
-      supportsPictureInPicture: true,
     }),
     [
       'react-native-nano-icons',
@@ -144,6 +140,7 @@ export default function getConfig(context: ConfigContext): ExpoConfig {
           podspec: 'https://acorn.blue/ffmpeg-kit-ios-full-gpl.podspec',
         },
       ],
+      reactNativeReleaseLevel: 'canary',
     },
   })
 }

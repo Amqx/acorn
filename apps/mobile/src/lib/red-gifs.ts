@@ -1,7 +1,7 @@
 import { addHours, fromUnixTime } from 'date-fns'
 // biome-ignore lint/performance/noNamespaceImport: go away
 import * as SecureStore from 'expo-secure-store'
-import { type VideoSource } from 'react-native-jet-video'
+import { type VideoConfig } from 'react-native-video'
 import { z } from 'zod'
 
 import { getUserAgent } from './user-agent'
@@ -21,7 +21,7 @@ type GifPayload = z.infer<typeof GifSchema>
 export type Gif = {
   expiresAt: Date
   poster?: string
-  source: VideoSource
+  source: VideoConfig
   url: string
 }
 

@@ -1,69 +1,81 @@
+import { Image } from 'expo-image'
 import { View } from 'react-native'
 import { StyleSheet } from 'react-native-unistyles'
+import { useTranslations } from 'use-intl'
+import { useShallow } from 'zustand/react/shallow'
 
-import { Spinner } from '~/components/common/spinner'
-import { useRedGifs } from '~/hooks/red-gifs'
+import { usePreferences } from '~/stores/preferences'
 import { type PostMedia } from '~/types/post'
 
-import { VideoPlayer } from './player'
+import { GalleryBlur } from '../gallery/blur'
 
 type Props = {
   compact?: boolean
   crossPost?: boolean
-  inView: boolean
   large?: boolean
   nsfw?: boolean
   recyclingKey?: string
   spoiler?: boolean
+  thumbnail?: string
   video: PostMedia
 }
 
-export function RedGifsVideo({
+export function VideoPlaceholder({
   compact = false,
   crossPost = false,
-  inView,
   large = false,
   nsfw,
   recyclingKey,
   spoiler,
+  thumbnail,
   video,
 }: Props) {
+  const t = useTranslations('component.posts.video')
+
   styles.useVariants({
     compact,
     crossPost,
     large,
   })
 
-  const { gif } = useRedGifs(video.url)
-
-  if (gif) {
-    return (
-      <VideoPlayer
-        compact={compact}
-        crossPost={crossPost}
-        inView={inView}
-        large={large}
-        nsfw={nsfw}
-        recyclingKey={recyclingKey}
-        spoiler={spoiler}
-        video={{
-          ...video,
-          url: gif.url,
-        }}
-      />
-    )
-  }
+  const { blurNsfw, blurSpoiler } = usePreferences(
+    useShallow((state) => ({
+      blurNsfw: state.blurNsfw,
+      blurSpoiler: state.blurSpoiler,
+    })),
+  )
 
   return (
     <View style={styles.main}>
-      <View style={styles.video(video.width / video.height)}>
-        <Spinner />
-      </View>
+      <Image
+        recyclingKey={recyclingKey}
+        source={video.thumbnail ?? thumbnail}
+        style={styles.image(video.width / video.height)}
+      />
+
+      {(nsfw && blurNsfw) || (spoiler && blurSpoiler) ? (
+        <GalleryBlur
+          compact={compact}
+          label={t(spoiler ? 'spoiler' : 'nsfw')}
+        />
+      ) : null}
     </View>
   )
 }
 
 const styles = StyleSheet.create((theme, runtime) => ({
+  image: (aspectRatio: number) => ({
+    variants: {
+      compact: {
+        false: {
+          aspectRatio,
+        },
+        true: {
+          aspectRatio: 1,
+        },
+      },
+    },
+  }),
   main: {
     borderCurve: 'continuous',
     borderRadius: theme.radius[4],
@@ -109,18 +121,4 @@ const styles = StyleSheet.create((theme, runtime) => ({
       },
     },
   },
-  video: (aspectRatio: number) => ({
-    alignItems: 'center',
-    justifyContent: 'center',
-    variants: {
-      compact: {
-        false: {
-          aspectRatio,
-        },
-        true: {
-          aspectRatio: 1,
-        },
-      },
-    },
-  }),
 }))

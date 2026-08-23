@@ -1,9 +1,13 @@
 import { useRecyclingState } from '@shopify/flash-list'
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { View } from 'react-native'
-import { VideoView, type VideoViewRef } from 'react-native-jet-video'
-import { useSharedValue } from 'react-native-reanimated'
 import { StyleSheet } from 'react-native-unistyles'
+import {
+  useEvent,
+  useVideoPlayer,
+  VideoView,
+  type VideoViewRef,
+} from 'react-native-video'
 import { useTranslations } from 'use-intl'
 import { useShallow } from 'zustand/react/shallow'
 
@@ -22,9 +26,9 @@ import { VideoStatus } from './status'
 type Props = {
   compact?: boolean
   crossPost?: boolean
+  inView: boolean
   large?: boolean
   nsfw?: boolean
-  poster?: string
   recyclingKey?: string
   spoiler?: boolean
   video: PostMedia
@@ -33,9 +37,9 @@ type Props = {
 export function VideoPlayer({
   compact = false,
   crossPost = false,
+  inView,
   large = false,
   nsfw,
-  poster,
   recyclingKey,
   spoiler,
   video,
@@ -71,14 +75,35 @@ export function VideoPlayer({
     large,
   })
 
-  const player = useRef<VideoViewRef>(null)
+  const view = useRef<VideoViewRef>(null)
 
-  const duration = useSharedValue(0)
-  const current = useSharedValue(0)
-  const buffered = useSharedValue(0)
+  const player = useVideoPlayer(video.url, (instance) => {
+    instance.mixAudioMode = 'mixWithOthers'
+    instance.loop = true
+    instance.muted = feedMuted
+  })
 
-  const [muted, setMuted] = useRecyclingState(feedMuted, [recyclingKey])
   const [loaded, setLoaded] = useRecyclingState(false, [recyclingKey])
+  const [duration, setDuration] = useRecyclingState(0, [recyclingKey])
+  const [muted, setMuted] = useRecyclingState(feedMuted, [recyclingKey])
+  const [fullscreen, setFullscreen] = useRecyclingState(false, [recyclingKey])
+
+  useEvent(player, 'onLoad', (event) => {
+    setLoaded(true)
+    setDuration(event.duration)
+  })
+
+  useEvent(player, 'onVolumeChange', (event) => {
+    setMuted(event.muted)
+  })
+
+  useEffect(() => {
+    if (!compact && inView && autoPlay) {
+      player.play()
+    } else {
+      player.pause()
+    }
+  }, [autoPlay, compact, player, inView])
 
   return (
     <Pressable
@@ -90,7 +115,7 @@ export function VideoPlayer({
         })
       }}
       onPress={() => {
-        player.current?.enterFullscreen()
+        view.current?.enterFullscreen()
 
         if (recyclingKey && seenOnMedia) {
           addPost({
@@ -102,50 +127,33 @@ export function VideoPlayer({
       variant="plain"
     >
       <VideoView
-        allowsPictureInPicture={pictureInPicture}
-        autoplay={!compact && autoPlay ? 'whenVisible' : false}
-        loop
-        muted={muted}
-        onFullscreenChange={(next) => {
-          if (next) {
-            player.current?.play()
+        autoEnterPictureInPicture={pictureInPicture}
+        controls={fullscreen}
+        onFullscreenChange={setFullscreen}
+        pictureInPicture={pictureInPicture}
+        player={player}
+        pointerEvents="none"
+        ref={view}
+        style={styles.video(video.width / video.height)}
+        willEnterFullscreen={() => {
+          player.play()
 
-            if (unmuteFullscreen && muted) {
-              setMuted(false)
-            }
-          } else {
-            if (compact || !autoPlay) {
-              player.current?.pause()
-            }
-
-            if (feedMuted) {
-              setMuted(true)
-            }
+          if (unmuteFullscreen && muted) {
+            player.muted = false
           }
         }}
-        onLoad={(event) => {
-          setLoaded(true)
+        willExitFullscreen={() => {
+          if (compact || !autoPlay) {
+            player.pause()
+          }
 
-          duration.set(event.duration)
+          if (feedMuted) {
+            player.muted = true
+          }
         }}
-        onProgress={(event) => {
-          current.set(event.currentTime)
-          buffered.set(event.bufferedPosition)
-        }}
-        poster={poster}
-        ref={player}
-        source={video.url}
-        style={styles.video(video.width / video.height)}
-        visibilityAxis="vertical"
       />
 
-      {compact ? null : (
-        <VideoStatus
-          buffered={buffered}
-          current={current}
-          duration={duration}
-        />
-      )}
+      {compact ? null : <VideoStatus duration={duration} player={player} />}
 
       {loaded ? null : (
         <View style={styles.loading}>
