@@ -45,7 +45,7 @@ export function PostCommunity({ post }: Props) {
             pathname: '/communities/[name]',
           })
         }}
-        style={styles.header}
+        style={styles.community}
       >
         {post.community.image ? (
           <Image
@@ -55,7 +55,7 @@ export function PostCommunity({ post }: Props) {
           />
         ) : null}
 
-        <Text numberOfLines={1} size="2" weight="medium">
+        <Text numberOfLines={1} size="2" style={styles.text} weight="medium">
           {post.community.name}
         </Text>
       </Pressable>
@@ -76,6 +76,7 @@ export function PostCommunity({ post }: Props) {
             pathname: '/users/[name]',
           })
         }}
+        style={styles.text}
       >
         <Text numberOfLines={1} size="2" weight="medium">
           {post.user.name}
@@ -86,27 +87,23 @@ export function PostCommunity({ post }: Props) {
 }
 
 const styles = StyleSheet.create((theme) => ({
-  footer: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexShrink: 1,
-    gap: theme.space[2],
-  },
-  header: {
-    alignItems: 'center',
+  community: {
     flexDirection: 'row',
     gap: theme.space[2],
   },
   image: {
     backgroundColor: theme.colors.gray.ui,
     borderCurve: 'continuous',
-    borderRadius: theme.space[4],
-    height: theme.space[4],
-    width: theme.space[4],
+    borderRadius: theme.typography[2].lineHeight,
+    height: theme.typography[2].lineHeight,
+    width: theme.typography[2].lineHeight,
   },
   main: {
+    alignItems: 'center',
     flexDirection: 'row',
-    flexShrink: 1,
     gap: theme.space[1],
+  },
+  text: {
+    flexShrink: 1,
   },
 }))

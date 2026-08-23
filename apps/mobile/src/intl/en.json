@@ -3,6 +3,7 @@
     "aboutCommunity": "About {community}",
     "addAccount": "Add account",
     "addFilter": "Add filter",
+    "changePostType": "Change post type",
     "changeSorting": "Change sorting",
     "chooseImage": "Choose image",
     "clearFilters": "Clear filters",
@@ -21,6 +22,7 @@
     "createComment": "Create comment",
     "createPost": "Create post",
     "createReply": "Send message",
+    "dismissKeyboard": "Dismiss keyboard",
     "download": "Download",
     "downloadGallery": "Download gallery",
     "downloadImage": "Download image",
@@ -113,6 +115,25 @@
       "empty": {
         "message": "Nothing here"
       },
+      "gallery": {
+        "image": {
+          "copy": "Copy image",
+          "download": "Download image",
+          "share": "Share image",
+          "title": "Image"
+        },
+        "link": {
+          "copy": "Copy link",
+          "openApp": "Open in app",
+          "openBrowser": "Open in browser",
+          "share": "Share link",
+          "title": "Link"
+        },
+        "video": {
+          "download": "Download video",
+          "title": "Video"
+        }
+      },
       "interval": {
         "all": "All time",
         "day": "Today",
@@ -148,7 +169,7 @@
       },
       "type": {
         "communities": {
-          "title": "Communities"
+          "title": "Communities & users"
         },
         "feeds": {
           "title": "Custom feeds"
@@ -206,6 +227,14 @@
         "placeholder": "Say something nice"
       }
     },
+    "navigation": {
+      "drawer": {
+        "title": "Communities"
+      },
+      "header": {
+        "back": "Back"
+      }
+    },
     "posts": {
       "community": {
         "by": "by"
@@ -216,7 +245,6 @@
       },
       "gallery": {
         "gif": "GIF",
-        "item": "{current, number} of {count, number}",
         "items": "{count, number} images",
         "nsfw": "Sensitive content - tap to view",
         "spoiler": "Spoiler - tap to view"
@@ -366,6 +394,7 @@
         "spoiler": "Spoiler"
       },
       "text": {
+        "dismiss": "Dismiss",
         "error": {
           "blacklist": "Not allowed: {list}",
           "max": "Max {max, plural, =0 {0 characters} =1 {1 character} other {# characters}}",
@@ -546,17 +575,17 @@
           "apercu": "Apercu",
           "basis": "Basis",
           "fold": "Fold",
+          "fontBold": "Bold text",
           "fontSizeCommentBody": "Comment text size",
           "fontSizePostBody": "Post text size",
           "fontSizeTitle": "Title text size",
+          "inter": "Inter",
           "system": "San Francisco",
           "systemScaling": "Use system scaling",
           "title": "Font"
         },
         "preferences": {
           "colorfulComments": "Colorful comments",
-          "themeOled": "OLED mode",
-          "themeTint": "Background tint",
           "title": "Preferences"
         },
         "themes": {
@@ -666,6 +695,8 @@
       },
       "preferences": {
         "browsing": {
+          "drawerLeft": "Drawer on left",
+          "drawerSticky": "Sticky drawer",
           "infiniteScrolling": "Infinite scrolling",
           "minimizeTabBar": "Minimize tab bar",
           "oldReddit": "Use old Reddit links",
@@ -676,7 +707,6 @@
             "label": "Auto refresh interval",
             "never": "Never"
           },
-          "stickyDrawer": "Sticky drawer",
           "title": "Browsing"
         },
         "comments": {

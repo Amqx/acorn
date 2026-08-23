@@ -1,5 +1,6 @@
 import { type InfiniteData, useInfiniteQuery } from '@tanstack/react-query'
 import { create, type Draft } from 'mutative'
+import { useShallow } from 'zustand/react/shallow'
 
 import { queryClient } from '~/lib/query'
 import { REDDIT_URI, reddit } from '~/reddit/api'
@@ -25,7 +26,11 @@ export type MessagesQueryKey = [
 export type MessagesQueryData = InfiniteData<Page, Param>
 
 export function useMessages() {
-  const { accountId } = useAuth(['accountId'])
+  const { accountId } = useAuth(
+    useShallow((state) => ({
+      accountId: state.accountId,
+    })),
+  )
 
   const {
     data,

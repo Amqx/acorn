@@ -1,9 +1,9 @@
 import { type StyleProp, View, type ViewStyle } from 'react-native'
 import { StyleSheet } from 'react-native-unistyles'
 import { useTranslations } from 'use-intl'
+import { useShallow } from 'zustand/react/shallow'
 
 import { usePostVote } from '~/hooks/mutations/posts/vote'
-import { getIcon } from '~/lib/icons'
 import { usePreferences } from '~/stores/preferences'
 import { type Post } from '~/types/post'
 
@@ -21,7 +21,11 @@ type Props = {
 export function PostFooter({ community = true, post, privacy, style }: Props) {
   const a11y = useTranslations('a11y')
 
-  const { hidePostActions } = usePreferences(['hidePostActions'])
+  const { hidePostActions } = usePreferences(
+    useShallow((state) => ({
+      hidePostActions: state.hidePostActions,
+    })),
+  )
 
   const { vote } = usePostVote()
 
@@ -38,7 +42,7 @@ export function PostFooter({ community = true, post, privacy, style }: Props) {
           <FooterButton
             color={!privacy && post.liked === true ? 'orange' : undefined}
             fill={!privacy && post.liked === true}
-            icon={getIcon('upvote.fill')}
+            icon="arrow-fat-up-fill"
             label={a11y(post.liked ? 'removeUpvote' : 'upvote')}
             onPress={() => {
               vote({
@@ -51,7 +55,7 @@ export function PostFooter({ community = true, post, privacy, style }: Props) {
           <FooterButton
             color={!privacy && post.liked === false ? 'violet' : undefined}
             fill={!privacy && post.liked === false}
-            icon={getIcon('downvote.fill')}
+            icon="arrow-fat-down-fill"
             label={a11y(post.liked === false ? 'removeDownvote' : 'downvote')}
             onPress={() => {
               vote({
@@ -81,7 +85,5 @@ const styles = StyleSheet.create((theme) => ({
     flexDirection: 'row',
     gap: theme.space[4],
     justifyContent: 'space-between',
-    margin: -theme.space[3],
-    padding: theme.space[3],
   }),
 }))

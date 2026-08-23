@@ -5,10 +5,11 @@ import { Text } from '~/components/common/text'
 import { BlurView } from '~/components/native/blur-view'
 
 type Props = {
+  compact?: boolean
   label?: string
 }
 
-export function GalleryBlur({ label }: Props) {
+export function GalleryBlur({ compact, label }: Props) {
   return (
     <BlurView
       intensity={100}
@@ -17,14 +18,14 @@ export function GalleryBlur({ label }: Props) {
       tint="systemThickMaterial"
     >
       <Icon
-        name="exclamationmark.circle.fill"
+        name="warning-circle-fill"
         uniProps={(theme) => ({
+          color: theme.colors.gray.text,
           size: theme.space[5],
-          tintColor: theme.colors.gray.text,
         })}
       />
 
-      {label ? (
+      {compact ? null : label ? (
         <Text size="1" weight="medium">
           {label}
         </Text>
@@ -39,5 +40,6 @@ const styles = StyleSheet.create((theme) => ({
     alignItems: 'center',
     gap: theme.space[4],
     justifyContent: 'center',
+    overflow: 'hidden',
   },
 }))

@@ -3,11 +3,13 @@ import { useEffect, useRef } from 'react'
 import { FlatList } from 'react-native-gesture-handler'
 import { StyleSheet } from 'react-native-unistyles'
 import { useTranslations } from 'use-intl'
+import { useShallow } from 'zustand/react/shallow'
 
 import { glass } from '~/lib/common'
 import { mitter } from '~/lib/mitt'
 import { useAuth } from '~/stores/auth'
 
+import { Icon } from '../common/icon'
 import { IconButton } from '../common/icon/button'
 import { Sheet } from '../common/sheet'
 import { Text } from '../common/text'
@@ -19,10 +21,14 @@ export function AccountSwitcher() {
   const t = useTranslations('component.users.switcher')
   const a11y = useTranslations('a11y')
 
-  const { accountId, accounts, remove, set } = useAuth([
-    'accountId',
-    'accounts',
-  ])
+  const { accountId, accounts, remove, set } = useAuth(
+    useShallow((state) => ({
+      accountId: state.accountId,
+      accounts: state.accounts,
+      remove: state.remove,
+      set: state.set,
+    })),
+  )
 
   const sheet = useRef<Sheet>(null)
 
@@ -41,9 +47,7 @@ export function AccountSwitcher() {
       <Sheet.Header
         right={
           <IconButton
-            color="green"
-            icon="plus"
-            label={a11y('addAccount')}
+            accessibilityLabel={a11y('addAccount')}
             onPress={async () => {
               await sheet.current?.dismiss()
 
@@ -55,7 +59,14 @@ export function AccountSwitcher() {
               })
             }}
             size={glass ? '9' : '8'}
-          />
+          >
+            <Icon
+              name="plus-bold"
+              uniProps={(theme) => ({
+                color: theme.colors.green.accent,
+              })}
+            />
+          </IconButton>
         }
         style={styles.header}
         title={t('title')}

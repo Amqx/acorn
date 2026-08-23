@@ -1,27 +1,36 @@
 import { type Ref, type RefObject } from 'react'
-import { type StyleProp, View, type ViewStyle } from 'react-native'
 import {
-  type FastMarkdownEditorRef,
-  type MarkdownContainerStyle,
-  type MarkdownEditorState,
-} from 'react-native-fast-markdown'
+  type StyleProp,
+  type TextStyle,
+  View,
+  type ViewStyle,
+} from 'react-native'
+import {
+  type EnrichedMarkdownTextInputInstance,
+  type StyleState,
+} from 'react-native-enriched-markdown'
+import {
+  KeyboardController,
+  useKeyboardState,
+} from 'react-native-keyboard-controller'
 import { StyleSheet } from 'react-native-unistyles'
 import { useTranslations } from 'use-intl'
+import { useShallow } from 'zustand/react/shallow'
 
 import { type Font, fonts } from '~/lib/fonts'
 import { usePreferences } from '~/stores/preferences'
 
-import { PhosphorIcon } from '../common/icon/phosphor'
-import { Pressable } from '../common/pressable'
+import { Icon } from '../common/icon'
+import { IconButton } from '../common/icon/button'
 import { MarkdownInput } from '../native/markdown'
 
 type RootProps = {
   onChange?: (value: string) => void
-  onChangeState?: (state: MarkdownEditorState) => void
+  onChangeState?: (state: StyleState) => void
   placeholder?: string
   value?: string
-  style?: MarkdownContainerStyle
-  ref?: Ref<FastMarkdownEditorRef>
+  style?: ViewStyle | TextStyle
+  ref?: Ref<EnrichedMarkdownTextInputInstance>
 }
 
 function Root({
@@ -32,11 +41,13 @@ function Root({
   value,
   ref,
 }: RootProps) {
-  const { font, fontScaling, systemScaling } = usePreferences([
-    'font',
-    'fontScaling',
-    'systemScaling',
-  ])
+  const { font, fontScaling, systemScaling } = usePreferences(
+    useShallow((state) => ({
+      font: state.font,
+      fontScaling: state.fontScaling,
+      systemScaling: state.systemScaling,
+    })),
+  )
 
   return (
     <MarkdownInput
@@ -47,111 +58,126 @@ function Root({
       onChangeState={onChangeState}
       placeholder={placeholder}
       ref={ref}
-      style={[styles.main(font, systemScaling ? 1 : fontScaling), style]}
+      style={StyleSheet.flatten([
+        styles.main(font, systemScaling ? 1 : fontScaling),
+        style,
+      ])}
     />
   )
 }
 
 type ToolBarProps = {
-  editor?: RefObject<FastMarkdownEditorRef | null>
-  state?: MarkdownEditorState
+  editor?: RefObject<EnrichedMarkdownTextInputInstance | null>
+  state?: StyleState
   style?: StyleProp<ViewStyle>
 }
 
 function ToolBar({ editor, state, style }: ToolBarProps) {
   const a11y = useTranslations('a11y')
 
+  const visible = useKeyboardState(({ isVisible }) => isVisible)
+
   return (
     <View style={[styles.toolBar, style]}>
-      <Pressable
+      <IconButton
         accessibilityLabel={a11y('toggleBold')}
         onPress={() => {
           editor?.current?.toggleBold()
         }}
-        style={styles.tool}
       >
-        <PhosphorIcon
-          name={state?.isBold ? 'text-b-bold' : 'text-b'}
+        <Icon
+          name={state?.bold.isActive ? 'text-b-bold' : 'text-b'}
           uniProps={(theme) => ({
-            color: state?.isBold
+            color: state?.bold.isActive
               ? theme.colors.accent.accent
               : theme.colors.gray.textLow,
           })}
         />
-      </Pressable>
+      </IconButton>
 
-      <Pressable
+      <IconButton
         accessibilityLabel={a11y('toggleItalic')}
         onPress={() => {
           editor?.current?.toggleItalic()
         }}
-        style={styles.tool}
       >
-        <PhosphorIcon
-          name={state?.isItalic ? 'text-italic-bold' : 'text-italic'}
+        <Icon
+          name={state?.italic.isActive ? 'text-italic-bold' : 'text-italic'}
           uniProps={(theme) => ({
-            color: state?.isItalic
+            color: state?.italic.isActive
               ? theme.colors.accent.accent
               : theme.colors.gray.textLow,
           })}
         />
-      </Pressable>
+      </IconButton>
 
-      <Pressable
+      <IconButton
         accessibilityLabel={a11y('toggleStrikethrough')}
         onPress={() => {
           editor?.current?.toggleStrikethrough()
         }}
-        style={styles.tool}
       >
-        <PhosphorIcon
+        <Icon
           name={
-            state?.isStrikethrough
+            state?.strikethrough.isActive
               ? 'text-strikethrough-bold'
               : 'text-strikethrough'
           }
           uniProps={(theme) => ({
-            color: state?.isStrikethrough
+            color: state?.strikethrough.isActive
               ? theme.colors.accent.accent
               : theme.colors.gray.textLow,
           })}
         />
-      </Pressable>
+      </IconButton>
 
-      <Pressable
+      <IconButton
         accessibilityLabel={a11y('toggleSpoiler')}
         onPress={() => {
           editor?.current?.toggleSpoiler()
         }}
-        style={styles.tool}
       >
-        <PhosphorIcon
-          name={state?.isSpoiler ? 'eye-closed-bold' : 'eye-closed'}
+        <Icon
+          name={state?.spoiler.isActive ? 'eye-closed-bold' : 'eye-closed'}
           uniProps={(theme) => ({
-            color: state?.isSpoiler
+            color: state?.spoiler.isActive
               ? theme.colors.accent.accent
               : theme.colors.gray.textLow,
           })}
         />
-      </Pressable>
+      </IconButton>
+
+      {visible ? (
+        <IconButton
+          accessibilityLabel={a11y('dismissKeyboard')}
+          onPress={() => {
+            KeyboardController.dismiss()
+          }}
+          style={styles.dismiss}
+        >
+          <Icon
+            name="caret-down"
+            uniProps={(theme) => ({
+              color: theme.colors.gray.textLow,
+            })}
+          />
+        </IconButton>
+      ) : null}
     </View>
   )
 }
 
 const styles = StyleSheet.create((theme) => ({
+  dismiss: {
+    marginLeft: 'auto',
+  },
   main: (font: Font, scaling: number) => ({
     color: theme.colors.gray.text,
     fontFamily: fonts[font],
     fontSize: theme.typography[3].fontSize * scaling,
-    gap: theme.space[1],
     lineHeight: theme.typography[3].lineHeight * scaling,
+    padding: theme.space[4],
   }),
-  tool: {
-    alignItems: 'center',
-    height: theme.space[8],
-    justifyContent: 'center',
-    width: theme.space[8],
-  },
   toolBar: {
     flexDirection: 'row',
   },

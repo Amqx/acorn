@@ -5,7 +5,6 @@ import { StyleSheet } from 'react-native-unistyles'
 import { useTranslations } from 'use-intl'
 
 import { removePrefix } from '~/lib/reddit'
-import { usePreferences } from '~/stores/preferences'
 import { type Post } from '~/types/post'
 
 import { Icon } from '../common/icon'
@@ -19,27 +18,25 @@ import { PostVideoCard } from './video'
 type Props = {
   compact?: boolean
   large?: boolean
+  onLongPress?: () => void
   post: Post
   recyclingKey?: string
-  onLongPress?: () => void
 }
 
 export function CrossPostCard({
-  compact,
+  compact = false,
   large,
+  onLongPress,
   post,
   recyclingKey,
-  onLongPress,
 }: Props) {
   const router = useRouter()
 
   const a11y = useTranslations('a11y')
 
-  const { themeOled } = usePreferences(['themeOled'])
-
   styles.useVariants({
+    compact,
     large,
-    oled: themeOled,
   })
 
   if (compact) {
@@ -67,7 +64,7 @@ export function CrossPostCard({
         ) : null}
 
         <View style={styles.icon}>
-          <Icon name="arrow.trianglehead.branch" style={styles.crossPost} />
+          <Icon name="shuffle" />
         </View>
       </Pressable>
     )
@@ -92,7 +89,6 @@ export function CrossPostCard({
         <PostVideoCard
           crossPost
           nsfw={post.nsfw}
-          onLongPress={onLongPress}
           recyclingKey={recyclingKey}
           spoiler={post.spoiler}
           thumbnail={post.media.images?.[0]?.url}
@@ -101,27 +97,23 @@ export function CrossPostCard({
       ) : null}
 
       {post.type === 'image' && post.media.images ? (
-        <View style={styles.card}>
-          <PostGalleryCard
-            images={post.media.images}
-            nsfw={post.nsfw}
-            onLongPress={onLongPress}
-            recyclingKey={recyclingKey}
-            spoiler={post.spoiler}
-          />
-        </View>
+        <PostGalleryCard
+          crossPost
+          images={post.media.images}
+          nsfw={post.nsfw}
+          recyclingKey={recyclingKey}
+          spoiler={post.spoiler}
+        />
       ) : null}
 
       {post.type === 'link' && post.url ? (
-        <View style={styles.card}>
-          <PostLinkCard
-            crossPost
-            media={post.media.images?.[0]}
-            onLongPress={onLongPress}
-            recyclingKey={recyclingKey}
-            url={post.url}
-          />
-        </View>
+        <PostLinkCard
+          crossPost
+          media={post.media.images?.[0]}
+          onLongPress={onLongPress}
+          recyclingKey={recyclingKey}
+          url={post.url}
+        />
       ) : null}
 
       <View style={styles.footer}>
@@ -136,16 +128,6 @@ export function CrossPostCard({
 }
 
 const styles = StyleSheet.create((theme) => ({
-  card: {
-    marginHorizontal: theme.space[3],
-  },
-  crossPost: {
-    transform: [
-      {
-        rotate: '-90deg',
-      },
-    ],
-  },
   footer: {
     gap: theme.space[3],
     padding: theme.space[3],
@@ -160,11 +142,16 @@ const styles = StyleSheet.create((theme) => ({
     flex: 1,
   },
   main: {
-    backgroundColor: theme.colors.gray.uiHover,
+    backgroundColor: theme.colors.gray.bgAlt,
     borderCurve: 'continuous',
     borderRadius: theme.radius[4],
     overflow: 'hidden',
     variants: {
+      compact: {
+        false: {
+          marginHorizontal: -theme.space[3],
+        },
+      },
       large: {
         false: {
           borderRadius: theme.space[1],
@@ -175,11 +162,6 @@ const styles = StyleSheet.create((theme) => ({
           borderRadius: theme.space[2],
           height: theme.space[8] * 2,
           width: theme.space[8] * 2,
-        },
-      },
-      oled: {
-        true: {
-          backgroundColor: theme.colors.gray.bg,
         },
       },
     },

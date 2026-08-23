@@ -2,10 +2,8 @@ import { FlashList } from '@shopify/flash-list'
 import { View } from 'react-native'
 import { StyleSheet } from 'react-native-unistyles'
 
+import { useListProps } from '~/hooks/list'
 import { useMessages } from '~/hooks/queries/user/messages'
-import { heights } from '~/lib/common'
-import { listProps } from '~/lib/list'
-import { usePreferences } from '~/stores/preferences'
 
 import { Empty } from '../common/empty'
 import { Loading } from '../common/loading'
@@ -14,12 +12,6 @@ import { Spinner } from '../common/spinner'
 import { MessageCard } from './message'
 
 export function MessagesList() {
-  const { themeOled } = usePreferences(['themeOled'])
-
-  styles.useVariants({
-    oled: themeOled,
-  })
-
   const {
     fetchNextPage,
     hasNextPage,
@@ -29,10 +21,11 @@ export function MessagesList() {
     refetch,
   } = useMessages()
 
+  const listProps = useListProps(true)
+
   return (
     <FlashList
       {...listProps}
-      contentContainerStyle={styles.content}
       data={messages}
       ItemSeparatorComponent={() => <View style={styles.separator} />}
       keyExtractor={(item) => item.id}
@@ -51,20 +44,10 @@ export function MessagesList() {
   )
 }
 
-const styles = StyleSheet.create((theme, runtime) => ({
-  content: {
-    paddingBottom: heights.tabBar + runtime.insets.bottom,
-  },
+const styles = StyleSheet.create((theme) => ({
   separator: {
-    height: theme.space[4],
-    variants: {
-      oled: {
-        true: {
-          backgroundColor: theme.colors.gray.border,
-          height: 1,
-        },
-      },
-    },
+    backgroundColor: theme.colors.gray.border,
+    height: 1,
   },
   spinner: {
     margin: theme.space[6],

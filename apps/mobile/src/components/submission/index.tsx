@@ -1,12 +1,13 @@
-import { useFocusEffect, useNavigation, useRouter } from 'expo-router'
-import { useCallback, useState } from 'react'
+import { Stack, useRouter } from 'expo-router'
+import { useHeaderHeight } from 'expo-router/react-navigation'
+import { useState } from 'react'
 import { Controller, FormProvider } from 'react-hook-form'
 import { View } from 'react-native'
-import { KeyboardAvoidingView } from 'react-native-keyboard-controller'
+import { useBottomTabBarHeight } from 'react-native-bottom-tabs'
 import { StyleSheet } from 'react-native-unistyles'
 import { useTranslations } from 'use-intl'
+import { useShallow } from 'zustand/react/shallow'
 
-import { IconButton } from '~/components/common/icon/button'
 import { SubmissionCommunityCard } from '~/components/submission/community'
 import { SubmissionFlair } from '~/components/submission/flair'
 import { SubmissionImage } from '~/components/submission/image'
@@ -15,10 +16,12 @@ import { SubmissionMeta } from '~/components/submission/meta'
 import { SubmissionText } from '~/components/submission/text'
 import { SubmissionTitle } from '~/components/submission/title'
 import { useCreatePost } from '~/hooks/mutations/posts/create'
-import { heights, iPad } from '~/lib/common'
 import { useAuth } from '~/stores/auth'
 import { type Submission } from '~/types/submission'
 
+import { Icon } from '../common/icon'
+import { IconButton } from '../common/icon/button'
+import { Spinner } from '../common/spinner'
 import { SubmissionType } from './type'
 
 type Props = {
@@ -27,11 +30,16 @@ type Props = {
 
 export function Submission({ submission }: Props) {
   const router = useRouter()
-  const navigation = useNavigation()
+  const headerHeight = useHeaderHeight()
+  const tabBarHeight = useBottomTabBarHeight()
 
   const a11y = useTranslations('a11y')
 
-  const { accountId } = useAuth(['accountId'])
+  const { accountId } = useAuth(
+    useShallow((state) => ({
+      accountId: state.accountId,
+    })),
+  )
 
   const { createPost, form, types, isPending } = useCreatePost(submission)
 
@@ -64,28 +72,26 @@ export function Submission({ submission }: Props) {
     form.reset()
   })
 
-  useFocusEffect(
-    useCallback(() => {
-      navigation.setOptions({
-        headerRight: () =>
-          uploading ? null : (
+  return (
+    <FormProvider {...form}>
+      {uploading ? null : (
+        <Stack.Toolbar placement="right">
+          <Stack.Toolbar.View>
             <IconButton
-              icon="paperplane.fill"
-              label={a11y('createPost')}
-              loading={isPending}
+              accessibilityLabel={a11y('createPost')}
+              disabled={isPending}
+              header
               onPress={() => {
                 onSubmit()
               }}
-              size="6"
-            />
-          ),
-      })
-    }, [a11y, isPending, navigation, onSubmit, uploading]),
-  )
+            >
+              {isPending ? <Spinner /> : <Icon name="paper-plane-tilt-fill" />}
+            </IconButton>
+          </Stack.Toolbar.View>
+        </Stack.Toolbar>
+      )}
 
-  return (
-    <FormProvider {...form}>
-      <View style={styles.header}>
+      <View style={styles.header(headerHeight)}>
         <SubmissionCommunityCard community={submission.community} />
 
         <SubmissionType types={types} />
@@ -93,30 +99,21 @@ export function Submission({ submission }: Props) {
 
       <SubmissionTitle />
 
-      <KeyboardAvoidingView
-        behavior="padding"
-        keyboardVerticalOffset={-40}
-        style={styles.content}
-      >
-        <Controller
-          control={form.control}
-          name="type"
-          render={({ field }) =>
-            field.value === 'image' || field.value === 'video' ? (
-              <SubmissionImage
-                onStatusChange={setUploading}
-                type={field.value}
-              />
-            ) : field.value === 'link' ? (
-              <SubmissionLink />
-            ) : (
-              <SubmissionText />
-            )
-          }
-        />
-      </KeyboardAvoidingView>
+      <Controller
+        control={form.control}
+        name="type"
+        render={({ field }) =>
+          field.value === 'image' || field.value === 'video' ? (
+            <SubmissionImage onStatusChange={setUploading} type={field.value} />
+          ) : field.value === 'link' ? (
+            <SubmissionLink />
+          ) : (
+            <SubmissionText />
+          )
+        }
+      />
 
-      <View style={styles.footer}>
+      <View style={styles.footer(tabBarHeight)}>
         <SubmissionFlair submission={submission} />
 
         <SubmissionMeta />
@@ -125,27 +122,18 @@ export function Submission({ submission }: Props) {
   )
 }
 
-const styles = StyleSheet.create((theme, runtime) => ({
-  content: {
-    flex: 1,
-  },
-  footer: {
+const styles = StyleSheet.create((theme) => ({
+  footer: (tabBarHeight: number) => ({
     gap: theme.space[4],
-    paddingBottom: heights.tabBar + runtime.insets.bottom + theme.space[4],
-    paddingHorizontal: theme.space[4],
-    paddingTop: theme.space[4],
-  },
-  header: {
-    alignItems: 'flex-start',
+    padding: theme.space[4],
+    paddingBottom: tabBarHeight + theme.space[4],
+  }),
+  header: (headerHeight: number) => ({
+    alignItems: 'center',
     flexDirection: 'row',
     gap: theme.space[4],
     justifyContent: 'space-between',
-    paddingBottom: theme.space[4],
-    paddingHorizontal: theme.space[4],
-    paddingTop:
-      (iPad ? heights.tabBar : 0) +
-      heights.header +
-      runtime.insets.top +
-      theme.space[4],
-  },
+    padding: theme.space[4],
+    paddingTop: headerHeight + theme.space[4],
+  }),
 }))

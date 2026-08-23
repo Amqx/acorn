@@ -3,16 +3,15 @@ import { useRef, useState } from 'react'
 import { Share, View } from 'react-native'
 import { StyleSheet } from 'react-native-unistyles'
 import { useTranslations } from 'use-intl'
+import { useShallow } from 'zustand/react/shallow'
 
 import { useHide } from '~/hooks/moderation/hide'
 import { useCommentSave } from '~/hooks/mutations/comments/save'
 import { useCommentVote } from '~/hooks/mutations/comments/vote'
 import { getDepthColor } from '~/lib/colors'
-import { cardMaxWidth, iPad } from '~/lib/common'
 import { REDDIT_URI } from '~/reddit/api'
 import { useGestures } from '~/stores/gestures'
 import { usePreferences } from '~/stores/preferences'
-import { oledTheme } from '~/styles/oled'
 import { type Undefined } from '~/types'
 import { type CommentReply } from '~/types/comment'
 
@@ -50,13 +49,14 @@ export function CommentCard({
 
   const a11y = useTranslations('a11y')
 
-  const { colorfulComments, privateScreenshots, themeOled, userOnTop } =
-    usePreferences([
-      'colorfulComments',
-      'privateScreenshots',
-      'themeOled',
-      'userOnTop',
-    ])
+  const { colorfulComments, privateScreenshots, userOnTop } = usePreferences(
+    useShallow((state) => ({
+      colorfulComments: state.colorfulComments,
+      privateScreenshots: state.privateScreenshots,
+      userOnTop: state.userOnTop,
+    })),
+  )
+
   const {
     commentLeft,
     commentLeftLong,
@@ -64,14 +64,16 @@ export function CommentCard({
     commentRight,
     commentRightLong,
     commentRightShort,
-  } = useGestures([
-    'commentLeft',
-    'commentLeftLong',
-    'commentLeftShort',
-    'commentRight',
-    'commentRightLong',
-    'commentRightShort',
-  ])
+  } = useGestures(
+    useShallow((state) => ({
+      commentLeft: state.commentLeft,
+      commentLeftLong: state.commentLeftLong,
+      commentLeftShort: state.commentLeftShort,
+      commentRight: state.commentRight,
+      commentRightLong: state.commentRightLong,
+      commentRightShort: state.commentRightShort,
+    })),
+  )
 
   const card = useRef<View>(null)
   const menu = useRef<Sheet>(null)
@@ -81,8 +83,6 @@ export function CommentCard({
   styles.useVariants({
     colorful: colorfulComments,
     dull,
-    iPad,
-    oled: themeOled,
   })
 
   const { vote } = useCommentVote()
@@ -246,7 +246,7 @@ export function CommentCard({
                   <Icon
                     name="paperclip"
                     uniProps={(theme) => ({
-                      tintColor: theme.colors.gray.accent,
+                      color: theme.colors.gray.accent,
                     })}
                   />
 
@@ -292,90 +292,43 @@ export function CommentCard({
   )
 }
 
-const styles = StyleSheet.create((theme, runtime) => ({
+const styles = StyleSheet.create((theme) => ({
   body: {
     padding: theme.space[3],
   },
-  container: (depth: number) => {
-    const marginLeft = theme.space[2] * depth
-
-    return {
-      alignSelf: 'center',
-      borderCurve: 'continuous',
-      marginLeft,
-      overflow: 'hidden',
-      variants: {
-        iPad: {
-          false: {
-            borderBottomLeftRadius: depth > 0 ? theme.radius[3] : undefined,
-            borderTopLeftRadius: depth > 0 ? theme.radius[3] : undefined,
-            maxWidth: runtime.screen.width - marginLeft,
-          },
-          true: {
-            borderRadius: theme.radius[3],
-            maxWidth: cardMaxWidth - marginLeft,
-          },
-        },
-      },
-      width: '100%',
-    }
-  },
+  container: (depth: number) => ({
+    borderBottomLeftRadius: depth > 0 ? theme.radius[3] : undefined,
+    borderCurve: 'continuous',
+    borderTopLeftRadius: depth > 0 ? theme.radius[3] : undefined,
+    marginLeft: theme.space[2] * depth,
+    overflow: 'hidden',
+  }),
   flair: {
     marginBottom: theme.space[3],
     marginHorizontal: theme.space[3],
   },
   main: (depth: number, dull?: boolean) => {
     const color = dull ? 'gray' : getDepthColor(depth)
-    const marginLeft = theme.space[2] * depth
 
     return {
-      alignSelf: 'center',
-      backgroundColor: theme.colors.gray.bgAlt,
       borderLeftColor: depth > 0 ? theme.colors[color].border : undefined,
       borderLeftWidth: depth > 0 ? theme.space[1] : undefined,
-      compoundVariants: [
-        {
-          colorful: true,
-          oled: true,
-          styles: {
-            backgroundColor: theme.colors[color].bg,
-          },
-        },
-        {
-          dull: true,
-          oled: true,
-          styles: {
-            backgroundColor: oledTheme[theme.variant].bg,
-          },
-        },
-      ],
       overflow: 'hidden',
       variants: {
         colorful: {
+          false: {
+            backgroundColor: theme.colors.ui.bg,
+          },
           true: {
             backgroundColor: theme.colors[color].bgAlt,
           },
         },
         dull: {
           true: {
-            backgroundColor: theme.colors.gray.ui,
-          },
-        },
-        iPad: {
-          false: {
-            maxWidth: runtime.screen.width - marginLeft,
-          },
-          true: {
-            maxWidth: cardMaxWidth - marginLeft,
-          },
-        },
-        oled: {
-          true: {
-            backgroundColor: oledTheme[theme.variant].bg,
+            backgroundColor: theme.colors.ui.bg,
           },
         },
       },
-      width: '100%',
     }
   },
   post: {

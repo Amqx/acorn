@@ -9,7 +9,6 @@ import expoScreenOrientation from 'expo-screen-orientation/plugin'
 import expoSecureStore from 'expo-secure-store/plugin'
 import expoSplashScreen from 'expo-splash-screen/plugin'
 import expoSqlite from 'expo-sqlite/plugin'
-import expoVideo from 'expo-video/plugin'
 import expoWebBrowser from 'expo-web-browser/plugin'
 
 export default function getConfig(context: ConfigContext): ExpoConfig {
@@ -19,14 +18,13 @@ export default function getConfig(context: ConfigContext): ExpoConfig {
   const plugins: ExpoConfig['plugins'] = [
     '@bacons/apple-targets',
     'expo-iap',
+    'react-native-bottom-tabs',
+    'react-native-video',
     expoRouter(),
     expoLocalization(),
     expoSecureStore(),
     expoSqlite(),
     expoWebBrowser(),
-    expoVideo({
-      supportsPictureInPicture: true,
-    }),
     expoSplashScreen({
       backgroundColor: '#fbfdfc',
       dark: {
@@ -43,9 +41,12 @@ export default function getConfig(context: ConfigContext): ExpoConfig {
         './assets/fonts/basis-upright.ttf',
         './assets/fonts/fold-italic.ttf',
         './assets/fonts/fold-upright.ttf',
+        './assets/fonts/inter-italic.ttf',
+        './assets/fonts/inter-upright.ttf',
         './assets/fonts/mono-regular.otf',
         './assets/fonts/mono-medium.otf',
         './assets/fonts/mono-bold.otf',
+        './assets/fonts/redacted.ttf',
       ],
     }),
     expoMediaLibrary({
@@ -98,7 +99,7 @@ export default function getConfig(context: ConfigContext): ExpoConfig {
     },
     ios: {
       appleTeamId: process.env.APPLE_TEAM_ID,
-      buildNumber: '77',
+      buildNumber: '86',
       bundleIdentifier: 'blue.acorn',
       config: {
         usesNonExemptEncryption: false,
@@ -139,8 +140,7 @@ export default function getConfig(context: ConfigContext): ExpoConfig {
           podspec: 'https://acorn.blue/ffmpeg-kit-ios-full-gpl.podspec',
         },
       ],
-      useHermesV1: true,
-      usePrecompiledModules: true,
+      reactNativeReleaseLevel: 'canary',
     },
   })
 }

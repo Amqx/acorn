@@ -1,12 +1,20 @@
-import { useEvent } from 'expo'
-import { useVideoPlayer, VideoView } from 'expo-video'
-import { useEffect, useRef, useState } from 'react'
+import { useRecyclingState } from '@shopify/flash-list'
+import { useEffect, useRef } from 'react'
+import { View } from 'react-native'
 import { StyleSheet } from 'react-native-unistyles'
+import {
+  useEvent,
+  useVideoPlayer,
+  VideoView,
+  type VideoViewRef,
+} from 'react-native-video'
 import { useTranslations } from 'use-intl'
+import { useShallow } from 'zustand/react/shallow'
 
 import { Icon } from '~/components/common/icon'
+import { MediaMenu } from '~/components/common/media-menu'
 import { Pressable } from '~/components/common/pressable'
-import { VisibilitySensor } from '~/components/common/sensor/visibility'
+import { Spinner } from '~/components/common/spinner'
 import { useHistory } from '~/hooks/history'
 import { usePreferences } from '~/stores/preferences'
 import { space } from '~/styles/tokens'
@@ -17,20 +25,24 @@ import { VideoStatus } from './status'
 
 type Props = {
   compact?: boolean
+  crossPost?: boolean
+  inView: boolean
+  large?: boolean
   nsfw?: boolean
   recyclingKey?: string
   spoiler?: boolean
   video: PostMedia
-  onLongPress?: () => void
 }
 
 export function VideoPlayer({
-  compact,
+  compact = false,
+  crossPost = false,
+  inView,
+  large = false,
   nsfw,
   recyclingKey,
   spoiler,
   video,
-  onLongPress,
 }: Props) {
   const t = useTranslations('component.posts.video')
   const a11y = useTranslations('a11y')
@@ -43,125 +55,136 @@ export function VideoPlayer({
     pictureInPicture,
     seenOnMedia,
     unmuteFullscreen,
-  } = usePreferences([
-    'autoPlay',
-    'blurNsfw',
-    'blurSpoiler',
-    'feedMuted',
-    'pictureInPicture',
-    'seenOnMedia',
-    'unmuteFullscreen',
-  ])
+  } = usePreferences(
+    useShallow((state) => ({
+      autoPlay: state.autoPlay,
+      blurNsfw: state.blurNsfw,
+      blurSpoiler: state.blurSpoiler,
+      feedMuted: state.feedMuted,
+      pictureInPicture: state.pictureInPicture,
+      seenOnMedia: state.seenOnMedia,
+      unmuteFullscreen: state.unmuteFullscreen,
+    })),
+  )
+
   const { addPost } = useHistory()
 
   styles.useVariants({
     compact,
+    crossPost,
+    large,
   })
 
-  const ref = useRef<VideoView>(null)
+  const view = useRef<VideoViewRef>(null)
 
   const player = useVideoPlayer(video.url, (instance) => {
-    instance.audioMixingMode = 'mixWithOthers'
-    instance.muted = feedMuted
+    instance.mixAudioMode = 'mixWithOthers'
     instance.loop = true
-    instance.timeUpdateEventInterval = 1000 / 1000 / 60
-
-    instance.pause()
+    instance.muted = feedMuted
   })
 
-  const [visible, setVisible] = useState(false)
+  const [loaded, setLoaded] = useRecyclingState(false, [recyclingKey])
+  const [duration, setDuration] = useRecyclingState(0, [recyclingKey])
+  const [muted, setMuted] = useRecyclingState(feedMuted, [recyclingKey])
+  const [fullscreen, setFullscreen] = useRecyclingState(false, [recyclingKey])
+
+  useEvent(player, 'onLoad', (event) => {
+    setLoaded(true)
+    setDuration(event.duration)
+  })
+
+  useEvent(player, 'onVolumeChange', (event) => {
+    setMuted(event.muted)
+  })
 
   useEffect(() => {
-    if (!compact && visible && autoPlay) {
+    if (!compact && inView && autoPlay) {
       player.play()
     } else {
       player.pause()
     }
-  }, [autoPlay, player, visible, compact])
-
-  const { muted } = useEvent(player, 'mutedChange', {
-    muted: feedMuted,
-  })
-
-  function onPress() {
-    ref.current?.enterFullscreen()
-
-    if (recyclingKey && seenOnMedia) {
-      addPost({
-        id: recyclingKey,
-      })
-    }
-  }
+  }, [autoPlay, compact, player, inView])
 
   return (
     <Pressable
       accessibilityLabel={a11y('viewVideo')}
-      onLongPress={onLongPress}
-      onPress={onPress}
+      onLongPress={() => {
+        MediaMenu.call({
+          type: 'video',
+          url: video.url,
+        })
+      }}
+      onPress={() => {
+        view.current?.enterFullscreen()
+
+        if (recyclingKey && seenOnMedia) {
+          addPost({
+            id: recyclingKey,
+          })
+        }
+      }}
       style={styles.main}
+      variant="plain"
     >
-      <VisibilitySensor
-        id={video.url}
-        onChange={(next) => {
-          setVisible(next.full)
+      <VideoView
+        autoEnterPictureInPicture={pictureInPicture}
+        controls={fullscreen}
+        onFullscreenChange={setFullscreen}
+        pictureInPicture={pictureInPicture}
+        player={player}
+        pointerEvents="none"
+        ref={view}
+        style={styles.video(video.width / video.height)}
+        willEnterFullscreen={() => {
+          player.play()
+
+          if (unmuteFullscreen && muted) {
+            player.muted = false
+          }
         }}
-      >
-        <VideoView
-          accessibilityIgnoresInvertColors
-          allowsPictureInPicture={pictureInPicture}
-          contentFit="cover"
-          fullscreenOptions={{
-            enable: false,
-          }}
-          onFullscreenEnter={() => {
-            player.play()
+        willExitFullscreen={() => {
+          if (compact || !autoPlay) {
+            player.pause()
+          }
 
-            if (unmuteFullscreen && muted) {
-              player.muted = false
-            }
-          }}
-          onFullscreenExit={() => {
-            if (compact || !autoPlay) {
-              player.pause()
-            }
-          }}
-          player={player}
-          pointerEvents="none"
-          ref={ref}
-          style={styles.video(video.width / video.height)}
-        />
-      </VisibilitySensor>
+          if (feedMuted) {
+            player.muted = true
+          }
+        }}
+      />
 
-      {compact ? null : <VideoStatus player={player} />}
+      {compact ? null : <VideoStatus duration={duration} player={player} />}
+
+      {loaded ? null : (
+        <View style={styles.loading}>
+          <Spinner />
+        </View>
+      )}
 
       {compact ? (
-        <Pressable
-          accessibilityLabel={a11y('viewVideo')}
-          onPress={onPress}
-          style={styles.compact}
-        >
-          <Icon name="play.fill" />
+        <View style={styles.compact}>
+          <Icon name="play-fill" />
 
           {(nsfw && blurNsfw) || (spoiler && blurSpoiler) ? (
-            <GalleryBlur />
+            <GalleryBlur compact />
           ) : null}
-        </Pressable>
+        </View>
       ) : (nsfw && blurNsfw) || (spoiler && blurSpoiler) ? (
         <GalleryBlur label={t(spoiler ? 'spoiler' : 'nsfw')} />
       ) : (
         <Pressable
           accessibilityLabel={a11y(muted ? 'unmute' : 'mute')}
-          hitSlop={space[2]}
+          hitSlop={space[3]}
           onPress={() => {
-            player.muted = !muted
+            setMuted((previous) => !previous)
           }}
           style={styles.volume}
         >
           <Icon
-            name={muted ? 'speaker.slash' : 'speaker.2'}
+            name={muted ? 'speaker-x' : 'speaker-high'}
             uniProps={(theme) => ({
+              color: theme.colors.gray.contrast,
               size: theme.space[4],
-              tintColor: theme.colors.gray.contrast,
             })}
           />
         </Pressable>
@@ -177,15 +200,60 @@ const styles = StyleSheet.create((theme, runtime) => ({
     backgroundColor: theme.colors.black.accentAlpha,
     justifyContent: 'center',
   },
-  main: {
+  loading: {
+    ...StyleSheet.absoluteFill,
+    alignItems: 'center',
     justifyContent: 'center',
-    maxHeight: runtime.screen.height * 0.6,
+  },
+  main: {
+    borderCurve: 'continuous',
+    borderRadius: theme.radius[4],
+    compoundVariants: [
+      {
+        compact: false,
+        crossPost: false,
+        styles: {
+          marginHorizontal: -theme.space[3],
+        },
+      },
+      {
+        compact: true,
+        large: true,
+        styles: {
+          borderRadius: theme.space[1] * 2,
+          height: theme.space[8] * 2,
+          width: theme.space[8] * 2,
+        },
+      },
+      {
+        compact: true,
+        large: false,
+        styles: {
+          borderRadius: theme.space[1],
+          height: theme.space[8],
+          width: theme.space[8],
+        },
+      },
+    ],
+    justifyContent: 'center',
+    maxHeight: runtime.screen.height * 0.4,
     overflow: 'hidden',
+    variants: {
+      compact: {
+        true: {},
+      },
+      crossPost: {
+        true: {},
+      },
+      large: {
+        true: {},
+      },
+    },
   },
   video: (aspectRatio: number) => ({
     variants: {
       compact: {
-        default: {
+        false: {
           aspectRatio,
         },
         true: {

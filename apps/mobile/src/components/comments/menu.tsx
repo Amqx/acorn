@@ -6,6 +6,7 @@ import { ScrollView } from 'react-native-gesture-handler'
 import { StyleSheet } from 'react-native-unistyles'
 import { toast } from 'sonner-native'
 import { useTranslations } from 'use-intl'
+import { useShallow } from 'zustand/react/shallow'
 
 import { Icon } from '~/components/common/icon'
 import { IconButton } from '~/components/common/icon/button'
@@ -20,13 +21,10 @@ import { useCommentRemove } from '~/hooks/mutations/comments/remove'
 import { useCommentSave } from '~/hooks/mutations/comments/save'
 import { useCommentVote } from '~/hooks/mutations/comments/vote'
 import { useScreenshot } from '~/hooks/screenshot'
-import { getIcon } from '~/lib/icons'
 import { REDDIT_OLD_URI, REDDIT_URI } from '~/reddit/api'
 import { useAuth } from '~/stores/auth'
 import { usePreferences } from '~/stores/preferences'
 import { type CommentReply } from '~/types/comment'
-
-import { GestureIcons } from '../common/gestures/actions'
 
 type Props = {
   ref: RefObject<Sheet | null>
@@ -49,8 +47,17 @@ export function CommentMenu({
 }: Props) {
   const router = useRouter()
 
-  const { accountId } = useAuth(['accountId'])
-  const { oldReddit } = usePreferences(['oldReddit'])
+  const { accountId } = useAuth(
+    useShallow((state) => ({
+      accountId: state.accountId,
+    })),
+  )
+
+  const { oldReddit } = usePreferences(
+    useShallow((state) => ({
+      oldReddit: state.oldReddit,
+    })),
+  )
 
   const t = useTranslations('component.posts.menu')
 
@@ -93,9 +100,7 @@ export function CommentMenu({
         >
           <View style={styles.palette}>
             <IconButton
-              color="orange"
-              icon={getIcon(comment.liked ? 'upvote.fill' : 'upvote')}
-              label={t(comment.liked ? 'removeUpvote' : 'upvote')}
+              accessibilityLabel={t(comment.liked ? 'removeUpvote' : 'upvote')}
               onPress={() => {
                 ref.current?.dismiss()
 
@@ -105,14 +110,19 @@ export function CommentMenu({
                   postId: comment.post.id,
                 })
               }}
-            />
+            >
+              <Icon
+                name={comment.liked ? 'arrow-fat-up-fill' : 'arrow-fat-up'}
+                uniProps={(theme) => ({
+                  color: theme.colors.orange.accent,
+                })}
+              />
+            </IconButton>
 
             <IconButton
-              color="violet"
-              icon={getIcon(
-                comment.liked === false ? 'downvote.fill' : 'downvote',
+              accessibilityLabel={t(
+                comment.liked === false ? 'removeDownvote' : 'downvote',
               )}
-              label={t(comment.liked === false ? 'removeDownvote' : 'downvote')}
               onPress={() => {
                 ref.current?.dismiss()
 
@@ -122,12 +132,21 @@ export function CommentMenu({
                   postId: comment.post.id,
                 })
               }}
-            />
+            >
+              <Icon
+                name={
+                  comment.liked === false
+                    ? 'arrow-fat-down-fill'
+                    : 'arrow-fat-down'
+                }
+                uniProps={(theme) => ({
+                  color: theme.colors.violet.accent,
+                })}
+              />
+            </IconButton>
 
             <IconButton
-              color="green"
-              icon={comment.saved ? 'bookmark.fill' : 'bookmark'}
-              label={t(comment.saved ? 'unsave' : 'save')}
+              accessibilityLabel={t(comment.saved ? 'unsave' : 'save')}
               onPress={() => {
                 ref.current?.dismiss()
 
@@ -137,12 +156,19 @@ export function CommentMenu({
                   postId: comment.post.id,
                 })
               }}
-            />
+            >
+              <Icon
+                name={
+                  comment.saved ? 'bookmark-simple-fill' : 'bookmark-simple'
+                }
+                uniProps={(theme) => ({
+                  color: theme.colors.green.accent,
+                })}
+              />
+            </IconButton>
 
             <IconButton
-              color="blue"
-              icon="arrowshape.turn.up.backward"
-              label={t('reply')}
+              accessibilityLabel={t('reply')}
               onPress={() => {
                 ref.current?.dismiss()
 
@@ -155,7 +181,14 @@ export function CommentMenu({
                   pathname: '/posts/[id]/reply',
                 })
               }}
-            />
+            >
+              <Icon
+                name="arrow-bend-up-left-bold"
+                uniProps={(theme) => ({
+                  color: theme.colors.blue.accent,
+                })}
+              />
+            </IconButton>
           </View>
 
           <Sheet.Separator />
@@ -165,7 +198,7 @@ export function CommentMenu({
           {onCollapse ? (
             <Sheet.Item
               label={t('collapseComment')}
-              left={<Icon name={GestureIcons.collapse} />}
+              left={<Icon name="arrows-in-line-vertical" />}
               onPress={() => {
                 ref.current?.dismiss()
 
@@ -177,7 +210,7 @@ export function CommentMenu({
           {onCollapseThread ? (
             <Sheet.Item
               label={t('collapseThread')}
-              left={<Icon name={GestureIcons.collapseThread} />}
+              left={<Icon name="arrows-in-line-horizontal" />}
               onPress={() => {
                 ref.current?.dismiss()
 
@@ -188,7 +221,7 @@ export function CommentMenu({
 
           <Sheet.Item
             label={t('copyText')}
-            left={<Icon name="square.on.square" />}
+            left={<Icon name="copy" />}
             onPress={() => {
               ref.current?.dismiss()
 
@@ -212,7 +245,7 @@ export function CommentMenu({
 
           <Sheet.Item
             label={t('copyPermalink')}
-            left={<Icon name="square.on.square" />}
+            left={<Icon name="copy" />}
             onPress={() => {
               ref.current?.dismiss()
 
@@ -229,7 +262,7 @@ export function CommentMenu({
 
           <Sheet.Item
             label={t('sharePermalink')}
-            left={<Icon name="square.and.arrow.up" />}
+            left={<Icon name="export" />}
             onPress={() => {
               ref.current?.dismiss()
 
@@ -256,7 +289,7 @@ export function CommentMenu({
 
           <Sheet.Item
             label={t('openBrowser')}
-            left={<Icon name="safari" />}
+            left={<Icon name="compass" />}
             onPress={() => {
               ref.current?.dismiss()
 
@@ -277,7 +310,7 @@ export function CommentMenu({
 
               <Sheet.Item
                 label={t('copyScreenshot')}
-                left={<Icon name="square.on.square" />}
+                left={<Icon name="copy" />}
                 onPress={async () => {
                   const url = await screenshot(card)
 
@@ -291,7 +324,7 @@ export function CommentMenu({
 
               <Sheet.Item
                 label={t('shareScreenshot')}
-                left={<Icon name="square.and.arrow.up" />}
+                left={<Icon name="export" />}
                 onPress={async () => {
                   const url = await screenshot(card)
 
@@ -305,7 +338,7 @@ export function CommentMenu({
 
               <Sheet.Item
                 label={t('downloadScreenshot')}
-                left={<Icon name="square.and.arrow.down" />}
+                left={<Icon name="download" />}
                 onPress={async () => {
                   const url = await screenshot(card)
 
@@ -327,7 +360,7 @@ export function CommentMenu({
             label={t('openUser', {
               user: comment.user.name,
             })}
-            left={<Icon name="person" />}
+            left={<Icon name="user" />}
             onPress={() => {
               ref.current?.dismiss()
 
@@ -345,7 +378,7 @@ export function CommentMenu({
               label={t('openCommunity', {
                 community: comment.community.name,
               })}
-              left={<Icon name="person.2" />}
+              left={<Icon name="users-four" />}
               onPress={() => {
                 ref.current?.dismiss()
 
@@ -367,7 +400,7 @@ export function CommentMenu({
             <>
               <Sheet.Item
                 label={t('editComment')}
-                left={<Icon name="square.and.pencil" />}
+                left={<Icon name="pencil" />}
                 onPress={() => {
                   ref.current?.dismiss()
 
@@ -388,7 +421,7 @@ export function CommentMenu({
                   <Icon
                     name="trash"
                     uniProps={(theme) => ({
-                      tintColor: theme.colors.red.accent,
+                      color: theme.colors.red.accent,
                     })}
                   />
                 }
@@ -408,9 +441,9 @@ export function CommentMenu({
             label={t('hideComment')}
             left={
               <Icon
-                name="eye.slash"
+                name="eye-slash"
                 uniProps={(theme) => ({
-                  tintColor: theme.colors.red.accent,
+                  color: theme.colors.red.accent,
                 })}
               />
             }
@@ -432,9 +465,9 @@ export function CommentMenu({
             })}
             left={
               <Icon
-                name="person"
+                name="user"
                 uniProps={(theme) => ({
-                  tintColor: theme.colors.red.accent,
+                  color: theme.colors.red.accent,
                 })}
               />
             }
@@ -458,7 +491,7 @@ export function CommentMenu({
               <Icon
                 name="flag"
                 uniProps={(theme) => ({
-                  tintColor: theme.colors.red.accent,
+                  color: theme.colors.red.accent,
                 })}
               />
             }
@@ -467,10 +500,10 @@ export function CommentMenu({
             }}
             right={
               <Icon
-                name="chevron.right"
+                name="caret-right"
                 uniProps={(theme) => ({
+                  color: theme.colors.gray.accent,
                   size: theme.space[4],
-                  tintColor: theme.colors.gray.accent,
                 })}
               />
             }

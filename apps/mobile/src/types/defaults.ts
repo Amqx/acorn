@@ -5,7 +5,7 @@ export type SearchTabs = Array<{
   key: SearchTab
 }>
 
-export type DrawerSection = 'feed' | 'feeds' | 'communities' | 'users'
+type DrawerSection = 'feed' | 'feeds' | 'communities'
 
 export type DrawerSections = Array<{
   disabled: boolean

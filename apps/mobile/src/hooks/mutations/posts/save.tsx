@@ -1,6 +1,7 @@
 import { useMutation } from '@tanstack/react-query'
 import { toast } from 'sonner-native'
 import { useTranslations } from 'use-intl'
+import { useShallow } from 'zustand/react/shallow'
 
 import { Icon } from '~/components/common/icon'
 import { updatePost } from '~/hooks/queries/posts/post'
@@ -22,7 +23,11 @@ type Variables = {
 export function usePostSave() {
   const t = useTranslations('toasts.posts')
 
-  const { upvoteOnSave } = usePreferences(['upvoteOnSave'])
+  const { upvoteOnSave } = usePreferences(
+    useShallow((state) => ({
+      upvoteOnSave: state.upvoteOnSave,
+    })),
+  )
 
   const { vote } = usePostVote()
 
@@ -66,9 +71,13 @@ export function usePostSave() {
       toast.success(t(variables.action === 'save' ? 'saved' : 'unsaved'), {
         icon: (
           <Icon
-            name={variables.action === 'save' ? 'bookmark.fill' : 'bookmark'}
+            name={
+              variables.action === 'save'
+                ? 'bookmark-simple-fill'
+                : 'bookmark-simple'
+            }
             uniProps={(theme) => ({
-              tintColor: theme.colors.green.accent,
+              color: theme.colors.green.accent,
             })}
           />
         ),

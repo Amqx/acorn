@@ -1,37 +1,19 @@
 import { type ReactNode } from 'react'
-import {
-  type StyleProp,
-  type TextStyle,
-  View,
-  type ViewStyle,
-} from 'react-native'
+import { type StyleProp, View, type ViewStyle } from 'react-native'
 import { StyleSheet } from 'react-native-unistyles'
 
 import { Text } from '~/components/common/text'
-import { usePreferences } from '~/stores/preferences'
-import { oledTheme } from '~/styles/oled'
 
 type Props = {
-  left?: ReactNode
   right?: ReactNode
   style?: StyleProp<ViewStyle>
   title: string
-  titleStyle?: StyleProp<TextStyle>
 }
 
-export function ListHeader({ left, right, style, title, titleStyle }: Props) {
-  const { themeOled, themeTint } = usePreferences(['themeOled', 'themeTint'])
-
-  styles.useVariants({
-    oled: themeOled,
-    tint: themeTint,
-  })
-
+export function ListHeader({ right, style, title }: Props) {
   return (
     <View style={[styles.main, style]}>
-      {left ? <View style={styles.left}>{left}</View> : null}
-
-      <Text style={titleStyle} weight="bold">
+      <Text style={styles.title} weight="bold">
         {title}
       </Text>
 
@@ -41,32 +23,20 @@ export function ListHeader({ left, right, style, title, titleStyle }: Props) {
 }
 
 const styles = StyleSheet.create((theme) => ({
-  left: {
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
   main: {
     alignItems: 'center',
-    backgroundColor: theme.colors.gray.bgAlt,
-    height: theme.space[8],
-    justifyContent: 'center',
-    variants: {
-      oled: {
-        true: {
-          backgroundColor: oledTheme[theme.variant].bg,
-        },
-      },
-      tint: {
-        true: {
-          backgroundColor: theme.colors.accent.bgAlt,
-        },
-      },
-    },
+    flexDirection: 'row',
+    height: theme.space[7],
   },
   right: {
-    bottom: 0,
-    position: 'absolute',
-    right: 0,
+    alignItems: 'center',
+    flexDirection: 'row',
+    height: theme.space[7],
+    justifyContent: 'center',
+    width: theme.space[8],
+  },
+  title: {
+    flex: 1,
+    marginHorizontal: theme.space[3],
   },
 }))

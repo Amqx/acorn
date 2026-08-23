@@ -1,5 +1,6 @@
 import { Text as Component, type TextProps } from 'react-native'
 import { StyleSheet } from 'react-native-unistyles'
+import { useShallow } from 'zustand/react/shallow'
 
 import {
   mapColors,
@@ -30,11 +31,14 @@ export function Text({
   weight = 'regular',
   ...props
 }: Props) {
-  const { font, fontScaling, systemScaling } = usePreferences([
-    'font',
-    'fontScaling',
-    'systemScaling',
-  ])
+  const { font, fontBold, fontScaling, systemScaling } = usePreferences(
+    useShallow((state) => ({
+      font: state.font,
+      fontBold: state.fontBold,
+      fontScaling: state.fontScaling,
+      systemScaling: state.systemScaling,
+    })),
+  )
 
   styles.useVariants({
     accent,
@@ -46,7 +50,7 @@ export function Text({
     italic,
     size,
     tabular,
-    weight,
+    weight: fontBold ? 'bold' : weight,
   })
 
   return (

@@ -1,0 +1,325 @@
+import { Stack } from 'expo-router'
+import { type PropsWithChildren } from 'react'
+import { StyleSheet } from 'react-native-unistyles'
+import { useTranslations } from 'use-intl'
+import { useShallow } from 'zustand/react/shallow'
+
+import { Icon } from '~/components/common/icon'
+import { IconButton } from '~/components/common/icon/button'
+import { useHistory } from '~/hooks/history'
+import { useSubscribed } from '~/hooks/purchases/subscribed'
+import { glass, iPad } from '~/lib/common'
+import { mitter } from '~/lib/mitt'
+import { useAuth } from '~/stores/auth'
+
+import { type CommunityParams } from './communities/[name]'
+import { type MessageParams } from './messages/[id]'
+import { type PostParams } from './posts/[id]'
+import { type SignInParams } from './sign-in'
+import { type UserParams } from './users/[name]'
+import { type UserPostsParams } from './users/[name]/[type]'
+
+export const unstable_settings = {
+  initialRouteName: 'index',
+  notifications: {
+    initialRouteName: 'notifications',
+  },
+  profile: {
+    initialRouteName: 'profile',
+  },
+  search: {
+    initialRouteName: 'search',
+  },
+  settings: {
+    initialRouteName: 'settings',
+  },
+}
+
+type Props = {
+  segment:
+    | '(home)'
+    | '(search)'
+    | '(profile)'
+    | '(notifications)'
+    | '(settings)'
+}
+
+export default function Layout({ segment }: Props) {
+  const t = useTranslations('screen')
+  const a11y = useTranslations('a11y')
+
+  const { accountId } = useAuth(
+    useShallow((state) => ({
+      accountId: state.accountId,
+    })),
+  )
+
+  if (segment === '(search)') {
+    return (
+      <StackLayout>
+        <Stack.Screen
+          name="search"
+          options={{
+            headerShown: false,
+            title: t('search.title'),
+          }}
+        />
+
+        <Stack.Screen name="index" />
+      </StackLayout>
+    )
+  }
+
+  if (segment === '(profile)') {
+    return (
+      <StackLayout>
+        <Stack.Screen
+          name="profile"
+          options={{
+            title: accountId,
+          }}
+        >
+          <Stack.Toolbar placement="right">
+            <Stack.Toolbar.View>
+              <IconButton
+                accessibilityLabel={a11y('switchAccount')}
+                header
+                onPress={() => {
+                  mitter.emit('switch-account')
+                }}
+              >
+                <Icon name="user-circle-plus" />
+              </IconButton>
+            </Stack.Toolbar.View>
+          </Stack.Toolbar>
+        </Stack.Screen>
+
+        <Stack.Screen name="index" />
+      </StackLayout>
+    )
+  }
+
+  if (segment === '(notifications)') {
+    return (
+      <StackLayout>
+        <Stack.Screen
+          name="notifications"
+          options={{
+            title: t('notifications.title'),
+          }}
+        />
+
+        <Stack.Screen name="index" />
+      </StackLayout>
+    )
+  }
+
+  if (segment === '(settings)') {
+    return (
+      <StackLayout>
+        <Stack.Screen
+          name="settings"
+          options={{
+            headerShown: false,
+            title: t('settings.settings.title'),
+          }}
+        />
+      </StackLayout>
+    )
+  }
+
+  return (
+    <StackLayout>
+      <Stack.Screen
+        listeners={{
+          blur() {
+            mitter.emit('drawer-close')
+          },
+        }}
+        name="index"
+      />
+    </StackLayout>
+  )
+}
+
+function StackLayout({ children }: PropsWithChildren) {
+  const t = useTranslations('screen')
+
+  const { addPost } = useHistory()
+
+  const { subscribed } = useSubscribed()
+
+  return (
+    <Stack
+      screenOptions={{
+        fullScreenGestureEnabled: true,
+        headerBackButtonDisplayMode: 'minimal',
+        headerBackButtonMenuEnabled: false,
+        headerBlurEffect: glass ? 'none' : 'systemChromeMaterial',
+        headerShadowVisible: iPad ? false : !glass,
+        headerTransparent: true,
+      }}
+    >
+      {children}
+
+      <Stack.Screen
+        name="communities/[name]/index"
+        options={({ route }) => ({
+          title: (route.params as CommunityParams).name,
+        })}
+      />
+
+      <Stack.Screen
+        name="communities/[name]/about"
+        options={({ route }) => ({
+          title: (route.params as CommunityParams).name,
+        })}
+      />
+
+      <Stack.Screen
+        name="communities/[name]/search"
+        options={({ route }) => ({
+          title: (route.params as CommunityParams).name,
+        })}
+      />
+
+      <Stack.Screen
+        name="users/[name]/index"
+        options={({ route }) => ({
+          title: (route.params as CommunityParams).name,
+        })}
+      />
+
+      <Stack.Screen
+        name="users/[name]/about"
+        options={({ route }) => ({
+          title: (route.params as UserParams).name,
+        })}
+      />
+
+      <Stack.Screen
+        name="users/[name]/[type]"
+        options={({ route }) => ({
+          title: t(`profile.${(route.params as UserPostsParams).type}`),
+        })}
+      />
+
+      <Stack.Screen
+        name="posts/new"
+        options={{
+          title: t('posts.new.title'),
+        }}
+      />
+
+      <Stack.Screen
+        listeners={({ route }) => ({
+          focus() {
+            addPost({
+              id: (route.params as PostParams).id,
+            })
+          },
+        })}
+        name="posts/[id]/index"
+        options={{
+          headerStyle: styles.header,
+          headerTransparent: false,
+          title: t('posts.post.title'),
+        }}
+      />
+
+      <Stack.Screen
+        name="posts/[id]/reply"
+        options={{
+          headerTransparent: false,
+          presentation: iPad ? 'formSheet' : 'modal',
+          title: t('posts.reply.title'),
+        }}
+      />
+
+      <Stack.Screen
+        name="messages/[id]"
+        options={({ route }) => ({
+          title: (route.params as MessageParams).user,
+        })}
+      />
+
+      <Stack.Screen
+        name="settings/cache"
+        options={{
+          title: t('settings.cache.title'),
+        }}
+      />
+
+      <Stack.Screen
+        name="settings/gestures"
+        options={{
+          title: t('settings.gestures.title'),
+        }}
+      />
+
+      <Stack.Screen
+        name="settings/preferences"
+        options={{
+          title: t('settings.preferences.title'),
+        }}
+      />
+
+      <Stack.Screen
+        name="settings/sort"
+        options={{
+          title: t('settings.sort.title'),
+        }}
+      />
+
+      <Stack.Screen
+        name="settings/filters"
+        options={{
+          title: t('settings.filters.title'),
+        }}
+      />
+
+      <Stack.Screen
+        name="settings/appearance"
+        options={{
+          title: t('settings.appearance.title'),
+        }}
+      />
+
+      <Stack.Screen
+        name="settings/defaults"
+        options={{
+          title: t('settings.defaults.defaults.title'),
+        }}
+      />
+
+      <Stack.Screen
+        name="sign-in"
+        options={({ route }) => ({
+          contentStyle: styles.full,
+          gestureEnabled: (route.params as SignInParams).mode === 'dismissible',
+          headerShown: false,
+          presentation: iPad ? 'formSheet' : 'modal',
+        })}
+      />
+
+      <Stack.Screen
+        name="subscribe"
+        options={{
+          gestureEnabled: subscribed,
+          headerShown: false,
+          presentation: iPad ? 'formSheet' : 'modal',
+        }}
+      />
+    </Stack>
+  )
+}
+
+const styles = StyleSheet.create((theme) => ({
+  full: {
+    height: '100%',
+    width: '100%',
+  },
+  header: {
+    backgroundColor: theme.colors.ui.bg,
+  },
+}))

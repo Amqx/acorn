@@ -7,17 +7,17 @@ import {
   type ViewStyle,
 } from 'react-native'
 import { StyleSheet } from 'react-native-unistyles'
+import { useShallow } from 'zustand/react/shallow'
 
 import { type Font, fonts } from '~/lib/fonts'
-import { stripProps } from '~/lib/styles'
 import { usePreferences } from '~/stores/preferences'
-import { type MarginProps } from '~/styles/space'
-import { type TextStyleProps } from '~/styles/text'
 import { type TypographyToken } from '~/styles/tokens'
 
+import { GlassView } from '../native/glass-view'
 import { TextInput } from '../native/text-input'
 
 type Props = {
+  glass?: boolean
   left?: ReactNode
   ref?: Ref<TextInput>
   right?: ReactNode
@@ -25,11 +25,10 @@ type Props = {
   style?: StyleProp<ViewStyle>
   styleInput?: StyleProp<TextStyle>
   variant?: 'sans' | 'mono'
-} & Omit<TextInputProps, 'style'> &
-  TextStyleProps &
-  MarginProps
+} & Omit<TextInputProps, 'style'>
 
 export function TextBox({
+  glass,
   left,
   multiline,
   onBlur,
@@ -40,11 +39,13 @@ export function TextBox({
   variant = 'sans',
   ...props
 }: Props) {
-  const { font, fontScaling, systemScaling } = usePreferences([
-    'font',
-    'fontScaling',
-    'systemScaling',
-  ])
+  const { font, fontScaling, systemScaling } = usePreferences(
+    useShallow((state) => ({
+      font: state.font,
+      fontScaling: state.fontScaling,
+      systemScaling: state.systemScaling,
+    })),
+  )
 
   const [focused, setFocused] = useState(false)
 
@@ -54,12 +55,14 @@ export function TextBox({
     variant,
   })
 
+  const Component = glass ? GlassView : View
+
   return (
-    <View style={[styles.main, style]}>
+    <Component isInteractive style={[styles.main, style]}>
       {left}
 
       <TextInput
-        {...stripProps(props)}
+        {...props}
         allowFontScaling={systemScaling}
         onBlur={(event) => {
           onBlur?.(event)
@@ -79,7 +82,7 @@ export function TextBox({
       />
 
       {right}
-    </View>
+    </Component>
   )
 }
 

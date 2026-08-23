@@ -2,11 +2,53 @@
 
 ## Upcoming
 
+- added: mute feed option
+- added: new gallery library
+- added: new video library
+
+## Build 86
+
+- added: bold text option
+- added: drawer left option
+- added: drawer sticky option for iPad
+- added: image menu added
+- added: thread collapsing scrolls to next comment
+- fixed: community list sorting
+- fixed: keyboard handling
+- fixed: video crashes
+
+## Build 85
+
+- added: full width posts / comments on iPad
+- added: image / video / link menu on long press
+- added: sticky drawer on iPad
+- changed: media styles
+- changed: softer background colors
+- fixed: communities list rebuilt
+- fixed: drawer alphabet list
+- removed: mute feed option
+
+## Build 84
+
+- added: image / video options
+- added: liquid glass navigation
+- fixed: default feeds and sorting
+- fixed: minimize tab bar
+- fixed: nsfw / spoiler
+- fixed: press tab to scroll to top in a post list
+- fixed: video playing
+
+## Build 83
+
+- added: long press to switch account
+- added: new design
 - added: tab bar minimize toggle
 - changed: ask for permission when enabling save to Acorn album
+- changed: image viewer
 - changed: sidebar button moved to the right
 - fixed: following Reddit share links
 - fixed: prioritize community over feed in post list fetch
+- fixed: video playing
 - removed: tab bar minimize options
 
 ## Build 77

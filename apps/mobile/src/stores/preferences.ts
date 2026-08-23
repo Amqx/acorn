@@ -3,7 +3,6 @@ import { persist } from 'zustand/middleware'
 
 import { type FloatingButtonSide } from '~/components/common/floating-button'
 import { type Font } from '~/lib/fonts'
-import { createSelectorHook } from '~/lib/selector'
 import { Store } from '~/lib/store'
 import { type Theme } from '~/styles/themes'
 import { type TypographyToken } from '~/styles/tokens'
@@ -17,7 +16,7 @@ import {
   type UserFeedSort,
 } from '~/types/sort'
 
-export const PREFERENCES_KEY = 'preferences'
+const PREFERENCES_KEY = 'preferences'
 
 export type PreferencesPayload = {
   autoPlay: boolean
@@ -29,12 +28,15 @@ export type PreferencesPayload = {
   colorfulComments: boolean
   communityOnTop: boolean
   dimSeen: boolean
+  drawerLeft: boolean
+  drawerSticky: boolean
   feedbackHaptics: boolean
   feedbackSounds: boolean
   feedCompact: boolean
   feedMuted: boolean
   feedType: FeedType
   font: Font
+  fontBold: boolean
   fontScaling: number
   fontSizeCommentBody: TypographyToken
   fontSizePostBody: TypographyToken
@@ -71,11 +73,8 @@ export type PreferencesPayload = {
   sortSearchPosts: SearchSort
   sortUserComments: CommentSort
   sortUserPosts: UserFeedSort
-  stickyDrawer: boolean
   systemScaling: boolean
   theme: Theme
-  themeOled: boolean
-  themeTint: boolean
   unmuteFullscreen: boolean
   upvoteOnSave: boolean
   userOnTop: boolean
@@ -85,7 +84,7 @@ type State = PreferencesPayload & {
   update: (payload: Partial<PreferencesPayload>) => void
 }
 
-export const preferencesStore = create<State>()(
+export const usePreferences = create<State>()(
   persist(
     (set) => ({
       autoPlay: true,
@@ -97,12 +96,15 @@ export const preferencesStore = create<State>()(
       colorfulComments: true,
       communityOnTop: false,
       dimSeen: false,
+      drawerLeft: false,
+      drawerSticky: true,
       feedbackHaptics: false,
       feedbackSounds: false,
       feedCompact: false,
       feedMuted: true,
       feedType: 'home',
       font: 'basis',
+      fontBold: false,
       fontScaling: 1,
       fontSizeCommentBody: '2',
       fontSizePostBody: '3',
@@ -139,11 +141,8 @@ export const preferencesStore = create<State>()(
       sortSearchPosts: 'relevance',
       sortUserComments: 'new',
       sortUserPosts: 'new',
-      stickyDrawer: true,
       systemScaling: false,
       theme: 'acorn',
-      themeOled: false,
-      themeTint: true,
       unmuteFullscreen: true,
       update(payload) {
         set(payload)
@@ -156,8 +155,4 @@ export const preferencesStore = create<State>()(
       storage: new Store(),
     },
   ),
-)
-
-export const usePreferences = createSelectorHook<PreferencesPayload, State>(
-  preferencesStore,
 )

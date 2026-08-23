@@ -2,6 +2,7 @@ import { type Query, useMutation, useQuery } from '@tanstack/react-query'
 import { eq } from 'drizzle-orm'
 import { create, type Draft } from 'mutative'
 import { useCallback, useMemo } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 
 import { db } from '~/db'
 import { isComment, isPost } from '~/lib/guards'
@@ -47,8 +48,17 @@ type Props = {
 }
 
 export function usePost({ commentId, id, sort }: Props) {
-  const { accountId } = useAuth(['accountId'])
-  const { collapseAutoModerator } = usePreferences(['collapseAutoModerator'])
+  const { accountId } = useAuth(
+    useShallow((state) => ({
+      accountId: state.accountId,
+    })),
+  )
+
+  const { collapseAutoModerator } = usePreferences(
+    useShallow((state) => ({
+      collapseAutoModerator: state.collapseAutoModerator,
+    })),
+  )
 
   const query = useQuery<
     Undefined<PostQueryData>,
@@ -164,16 +174,21 @@ export function usePost({ commentId, id, sort }: Props) {
 
   const collapseThread = useCallback(
     (variables: CollapseVariables) => {
-      const parentIds = getParentCommentIds(
-        query.data?.comments ?? [],
-        variables.commentId,
-      )
+      const comments = query.data?.comments ?? []
+
+      const parentIds = getParentCommentIds(comments, variables.commentId)
 
       const $commentId = parentIds.at(-1) ?? variables.commentId
 
       collapse({
         commentId: $commentId,
       })
+
+      const index = comments
+        .filter((item) => !isHidden(comments, item.data.id))
+        .findIndex((item) => item.data.id === $commentId)
+
+      return index + 1
     },
     [collapse, query.data?.comments],
   )

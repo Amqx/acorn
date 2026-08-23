@@ -1,7 +1,7 @@
 import { type StyleProp, View, type ViewStyle } from 'react-native'
 import { StyleSheet } from 'react-native-unistyles'
+import { useShallow } from 'zustand/react/shallow'
 
-import { cardMaxWidth } from '~/lib/common'
 import { usePreferences } from '~/stores/preferences'
 import { type Post } from '~/types/post'
 
@@ -28,12 +28,14 @@ export function PostCompactCard({
   style,
 }: Props) {
   const { boldTitle, communityOnTop, fontSizeTitle, largeThumbnails } =
-    usePreferences([
-      'boldTitle',
-      'communityOnTop',
-      'fontSizeTitle',
-      'largeThumbnails',
-    ])
+    usePreferences(
+      useShallow((state) => ({
+        boldTitle: state.boldTitle,
+        communityOnTop: state.communityOnTop,
+        fontSizeTitle: state.fontSizeTitle,
+        largeThumbnails: state.largeThumbnails,
+      })),
+    )
 
   styles.useVariants({
     large: largeThumbnails,
@@ -85,7 +87,7 @@ export function PostCompactCard({
 
         {post.type === 'text' ? (
           <View style={styles.text}>
-            <Icon name="text.alignleft" />
+            <Icon name="text-align-left" />
           </View>
         ) : null}
       </View>
@@ -115,10 +117,8 @@ const styles = StyleSheet.create((theme) => ({
     gap: theme.space[2],
   },
   main: (right: boolean) => ({
-    alignSelf: 'center',
     flexDirection: right ? 'row-reverse' : 'row',
     gap: theme.space[3],
-    maxWidth: cardMaxWidth,
     overflow: 'hidden',
     padding: theme.space[3],
   }),

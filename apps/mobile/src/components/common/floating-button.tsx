@@ -1,22 +1,23 @@
-import { type SFSymbol } from 'expo-symbols'
+import { type ReactNode } from 'react'
 import { type StyleProp, type ViewStyle } from 'react-native'
+import { useBottomTabBarHeight } from 'react-native-bottom-tabs'
 import { StyleSheet } from 'react-native-unistyles'
 
-import { glass, heights, iPad } from '~/lib/common'
-import { mapColors } from '~/lib/styles'
-import { type ColorToken, space } from '~/styles/tokens'
+import { glass, iPad } from '~/lib/common'
+import { space } from '~/styles/tokens'
 
 import { BlurView } from '../native/blur-view'
 import { GlassView } from '../native/glass-view'
 import { IconButton } from './icon/button'
+
+export const FloatingButtonSize = 80 // 48 + 16 + 16
 
 export const FloatingButtonSide = ['left', 'center', 'right', 'hide'] as const
 
 export type FloatingButtonSide = (typeof FloatingButtonSide)[number]
 
 type Props = {
-  color?: ColorToken
-  icon: SFSymbol
+  children: ReactNode
   label: string
   onLongPress?: () => void
   onPress?: () => void
@@ -25,16 +26,18 @@ type Props = {
 }
 
 export function FloatingButton({
-  color = 'accent',
-  icon,
+  children,
   label,
   onLongPress,
   onPress,
   side = 'right',
   style,
 }: Props) {
+  const tabBarHeight = useBottomTabBarHeight()
+
   styles.useVariants({
-    color,
+    glass,
+    iPad,
     side,
   })
 
@@ -44,33 +47,39 @@ export function FloatingButton({
     <Component
       intensity={100}
       isInteractive
-      style={[styles.main, style]}
-      tint="systemChromeMaterial"
+      style={[styles.main(tabBarHeight), style]}
     >
       <IconButton
-        color={color}
+        accessibilityLabel={label}
         hitSlop={space[4]}
-        icon={icon}
-        label={label}
         onLongPress={onLongPress}
         onPress={onPress}
-        weight="bold"
-      />
+      >
+        {children}
+      </IconButton>
     </Component>
   )
 }
 
 const styles = StyleSheet.create((theme, runtime) => ({
-  main: {
+  main: (tabBarHeight: number) => ({
     borderCurve: 'continuous',
     borderRadius: theme.space[8],
-    bottom: runtime.insets.bottom + (iPad ? theme.space[4] : heights.tabBar),
-    overflow: glass ? undefined : 'hidden',
     position: 'absolute',
     variants: {
-      color: mapColors((token) => ({
-        backgroundColor: glass ? undefined : theme.colors[token].uiActiveAlpha,
-      })),
+      glass: {
+        false: {
+          overflow: 'hidden',
+        },
+      },
+      iPad: {
+        false: {
+          bottom: tabBarHeight + theme.space[4],
+        },
+        true: {
+          bottom: runtime.insets.bottom + theme.space[4],
+        },
+      },
       side: {
         center: {
           left: runtime.screen.width / 2 - theme.space[8] / 2,
@@ -86,5 +95,5 @@ const styles = StyleSheet.create((theme, runtime) => ({
         },
       },
     },
-  },
+  }),
 }))

@@ -1,5 +1,11 @@
-import { type FlashListRef, type ListRenderItem } from '@shopify/flash-list'
-import { useRouter } from 'expo-router'
+import {
+  FlashList,
+  type FlashListProps,
+  type FlashListRef,
+  type ListRenderItem,
+} from '@shopify/flash-list'
+import { useRouter, useScrollToTop } from 'expo-router'
+import { useHeaderHeight } from 'expo-router/react-navigation'
 import { type ReactElement, useCallback, useRef } from 'react'
 import {
   type StyleProp,
@@ -9,15 +15,15 @@ import {
 } from 'react-native'
 import { StyleSheet } from 'react-native-unistyles'
 import { useTranslations } from 'use-intl'
+import { useShallow } from 'zustand/react/shallow'
 
 import { RefreshControl } from '~/components/common/refresh-control'
 import { Spinner } from '~/components/common/spinner'
 import { PostCard } from '~/components/posts/card'
 import { useHistory } from '~/hooks/history'
+import { type ListProps } from '~/hooks/list'
 import { type PostsProps, usePosts } from '~/hooks/queries/posts/posts'
-import { cardMaxWidth, iPad } from '~/lib/common'
-import { listProps } from '~/lib/list'
-import { preferencesStore, usePreferences } from '~/stores/preferences'
+import { usePreferences } from '~/stores/preferences'
 import { type Comment } from '~/types/comment'
 import { type Post } from '~/types/post'
 
@@ -25,10 +31,9 @@ import { CommentCard } from '../comments/card'
 import { Button } from '../common/button'
 import { Empty } from '../common/empty'
 import { Loading } from '../common/loading'
-import { SensorList } from '../common/sensor/list'
 
 const viewabilityConfig: ViewabilityConfig = {
-  minimumViewTime: preferencesStore.getState().seenOnScrollDelay * 1000,
+  minimumViewTime: usePreferences.getState().seenOnScrollDelay * 1000,
   waitForInteraction: false,
 }
 
@@ -36,6 +41,7 @@ type Item = Post | Comment
 
 type Props = PostsProps & {
   header?: ReactElement
+  listProps?: ListProps
   onRefresh?: () => void
   style?: StyleProp<ViewStyle>
 }
@@ -45,6 +51,7 @@ export function PostList({
   feed,
   header,
   interval,
+  listProps,
   onRefresh,
   query,
   sort,
@@ -53,25 +60,30 @@ export function PostList({
   userType,
 }: Props) {
   const router = useRouter()
+  const headerHeight = useHeaderHeight()
 
   const t = useTranslations('component.posts.list')
 
   const list = useRef<FlashListRef<Item>>(null)
 
-  const { feedCompact, infiniteScrolling, seenOnScroll, themeOled } =
-    usePreferences([
-      'feedCompact',
-      'infiniteScrolling',
-      'seenOnScroll',
-      'themeOled',
-    ])
+  useScrollToTop(
+    useRef({
+      scrollToTop() {
+        list.current?.scrollToOffset({
+          offset: -headerHeight,
+        })
+      },
+    }),
+  )
+
   const { addPost } = useHistory()
 
-  styles.useVariants({
-    compact: feedCompact,
-    iPad,
-    oled: themeOled,
-  })
+  const { infiniteScrolling, seenOnScroll } = usePreferences(
+    useShallow((state) => ({
+      infiniteScrolling: state.infiniteScrolling,
+      seenOnScroll: state.seenOnScroll,
+    })),
+  )
 
   const {
     fetchNextPage,
@@ -119,8 +131,32 @@ export function PostList({
     [router],
   )
 
+  const onViewableItemsChanged: FlashListProps<Item>['onViewableItemsChanged'] =
+    useCallback(
+      ({ changed }) => {
+        if (!seenOnScroll) {
+          return
+        }
+
+        const items = changed.filter(
+          (item) =>
+            !item.isViewable &&
+            item.item &&
+            item.item.type !== 'reply' &&
+            item.item.type !== 'more',
+        )
+
+        for (const item of items) {
+          addPost({
+            id: (item.item as Post).id,
+          })
+        }
+      },
+      [addPost, seenOnScroll],
+    )
+
   return (
-    <SensorList
+    <FlashList
       {...listProps}
       contentContainerStyle={style}
       data={posts}
@@ -140,7 +176,7 @@ export function PostList({
       ListEmptyComponent={isLoading ? <Loading /> : <Empty />}
       ListFooterComponent={() =>
         isFetchingNextPage ? (
-          <Spinner style={styles.spinner} />
+          <Spinner size="large" style={styles.more} />
         ) : infiniteScrolling ? null : hasNextPage ? (
           <Button
             label={t('more')}
@@ -152,9 +188,6 @@ export function PostList({
         ) : null
       }
       ListHeaderComponent={header}
-      maintainVisibleContentPosition={{
-        disabled: true,
-      }}
       onEndReached={() => {
         if (!infiniteScrolling) {
           return
@@ -164,25 +197,7 @@ export function PostList({
           fetchNextPage()
         }
       }}
-      onViewableItemsChanged={({ changed }) => {
-        if (!seenOnScroll) {
-          return
-        }
-
-        const items = changed.filter(
-          (item) =>
-            !item.isViewable &&
-            item.item &&
-            item.item.type !== 'reply' &&
-            item.item.type !== 'more',
-        )
-
-        for (const item of items) {
-          addPost({
-            id: (item.item as Post).id,
-          })
-        }
-      }}
+      onViewableItemsChanged={onViewableItemsChanged}
       ref={list}
       refreshControl={
         <RefreshControl
@@ -202,49 +217,10 @@ export function PostList({
 const styles = StyleSheet.create((theme) => ({
   more: {
     alignSelf: 'center',
-    marginBottom: theme.space[4] * 2,
-    marginTop: theme.space[4] * 2,
-    variants: {
-      iPad: {
-        true: {
-          marginBottom: theme.space[4],
-        },
-      },
-    },
+    marginVertical: theme.space[4],
   },
   separator: {
-    alignSelf: 'center',
-    height: theme.space[4],
-    variants: {
-      compact: {
-        true: {
-          height: theme.space[2],
-        },
-      },
-      iPad: {
-        true: {
-          maxWidth: cardMaxWidth,
-        },
-      },
-      oled: {
-        true: {
-          backgroundColor: theme.colors.gray.border,
-          height: 1,
-        },
-      },
-    },
-    width: '100%',
-  },
-  spinner: {
-    height: theme.space[7],
-    marginBottom: theme.space[4] * 2,
-    marginTop: theme.space[4] * 2,
-    variants: {
-      iPad: {
-        true: {
-          marginBottom: theme.space[4],
-        },
-      },
-    },
+    backgroundColor: theme.colors.gray.border,
+    height: 1,
   },
 }))

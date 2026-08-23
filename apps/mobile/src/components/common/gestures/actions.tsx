@@ -1,9 +1,7 @@
-import { type SFSymbol, SymbolView, type SymbolViewProps } from 'expo-symbols'
-import { type ReactNode } from 'react'
+import { type ReactNode, useState } from 'react'
 import { type ViewStyle } from 'react-native'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import Animated, {
-  useAnimatedProps,
   useAnimatedStyle,
   useSharedValue,
   withSequence,
@@ -13,13 +11,13 @@ import { StyleSheet, useUnistyles } from 'react-native-unistyles'
 import { scheduleOnRN } from 'react-native-worklets'
 
 import { triggerFeedback } from '~/lib/feedback'
-import { getIcon } from '~/lib/icons'
 import { type ColorToken } from '~/styles/tokens'
 import { type Undefined } from '~/types'
 
+import { Icon, type IconName } from '../icon'
 import { type GestureAction, type GestureData, type Gestures } from '.'
 
-const Icon = Animated.createAnimatedComponent(SymbolView)
+const AnimatedIcon = Animated.createAnimatedComponent(Icon)
 
 type Props = {
   children: ReactNode
@@ -33,6 +31,7 @@ type Props = {
 }
 
 export function Actions({ children, data, gestures, onAction, style }: Props) {
+  const width = useSharedValue(0)
   const translate = useSharedValue(0)
   const height = useSharedValue(0)
 
@@ -40,11 +39,10 @@ export function Actions({ children, data, gestures, onAction, style }: Props) {
 
   const action = useSharedValue<GestureAction | null>(null)
   const color = useSharedValue(theme.colors.gray.accent)
-  const icon = useSharedValue<SFSymbol>('questionmark')
   const opacity = useSharedValue(0)
   const scale = useSharedValue(1)
 
-  const width = style?.maxWidth ? Number(style.maxWidth) : 0
+  const [icon, setIcon] = useState<IconName>('question-mark')
 
   const active: number | [number, number] =
     gestures.left.enabled && gestures.right.enabled
@@ -73,7 +71,7 @@ export function Actions({ children, data, gestures, onAction, style }: Props) {
 
       const translationX = Math.abs(event.translationX)
 
-      if (translationX >= width) {
+      if (translationX >= width.get()) {
         return
       }
 
@@ -81,9 +79,9 @@ export function Actions({ children, data, gestures, onAction, style }: Props) {
 
       const side = event.translationX > 0 ? 'left' : 'right'
       const swipe =
-        translationX >= width * 0.4
+        translationX >= width.get() * 0.4
           ? 'long'
-          : translationX >= width * 0.2
+          : translationX >= width.get() * 0.2
             ? 'short'
             : null
 
@@ -105,7 +103,8 @@ export function Actions({ children, data, gestures, onAction, style }: Props) {
       }
 
       color.set(theme.colors[GestureColors[$gesture]].accent)
-      icon.set(getNextIcon($gesture, data))
+
+      scheduleOnRN(setIcon, getNextIcon($gesture, data))
 
       action.set(swipe ? $gesture : null)
 
@@ -168,7 +167,7 @@ export function Actions({ children, data, gestures, onAction, style }: Props) {
       backgroundColor: color.get(),
       display: 'flex',
       height: height.get(),
-      left: width + x,
+      left: width.get() + x,
       opacity: 1,
       transform: [
         {
@@ -187,35 +186,24 @@ export function Actions({ children, data, gestures, onAction, style }: Props) {
     ],
   }))
 
-  const iconProps = useAnimatedProps<SymbolViewProps>(() => ({
-    name: icon.get(),
-  }))
-
   const iconStyle = useAnimatedStyle(() => ({
     opacity: opacity.get(),
   }))
 
   return (
     <GestureDetector gesture={gesture}>
-      <Animated.View style={style}>
+      <Animated.View
+        onLayout={(event) => {
+          width.set(event.nativeEvent.layout.width)
+        }}
+        style={style}
+      >
         <Animated.View pointerEvents="none" style={[styles.action, left]}>
-          <Icon
-            animatedProps={iconProps}
-            name="questionmark"
-            size={32}
-            style={iconStyle}
-            tintColor="#fff"
-          />
+          <AnimatedIcon color="#fff" name={icon} size={32} style={iconStyle} />
         </Animated.View>
 
         <Animated.View pointerEvents="none" style={[styles.action, right]}>
-          <Icon
-            animatedProps={iconProps}
-            name="questionmark"
-            size={32}
-            style={iconStyle}
-            tintColor="#fff"
-          />
+          <AnimatedIcon color="#fff" name={icon} size={32} style={iconStyle} />
         </Animated.View>
 
         <Animated.View
@@ -251,47 +239,38 @@ export const GestureColors = {
   upvote: 'orange',
 } as const satisfies Record<GestureAction, ColorToken>
 
-export const GestureIcons = {
-  collapse: 'arrow.down.and.line.horizontal.and.arrow.up',
-  collapseThread: 'arrow.right.and.line.vertical.and.arrow.left',
-  downvote: getIcon('downvote'),
-  hide: 'eye.slash',
-  reply: 'arrowshape.turn.up.backward',
-  save: 'bookmark',
-  share: 'square.and.arrow.up',
-  upvote: getIcon('upvote'),
-} as const satisfies Record<GestureAction, SFSymbol>
-
-function getNextIcon(action: GestureAction, data: GestureData): SFSymbol {
+function getNextIcon(action: GestureAction, data: GestureData): IconName {
   'worklet'
 
   if (action === 'collapse') {
     return data.collapsed
-      ? 'arrow.up.and.line.horizontal.and.arrow.down'
-      : GestureIcons.collapse
+      ? 'arrows-out-line-horizontal'
+      : 'arrows-in-line-vertical'
   }
 
   if (action === 'collapseThread') {
-    return GestureIcons.collapseThread
+    return 'arrows-in-line-horizontal'
   }
 
   if (action === 'upvote') {
-    return data.liked ? GestureIcons.upvote : `${GestureIcons.upvote}.fill`
+    return data.liked ? 'arrow-fat-up' : 'arrow-fat-up-fill'
   }
 
   if (action === 'downvote') {
-    return data.liked === false
-      ? GestureIcons.downvote
-      : `${GestureIcons.downvote}.fill`
+    return data.liked === false ? 'arrow-fat-down' : 'arrow-fat-down-fill'
   }
 
   if (action === 'save') {
-    return data.saved ? GestureIcons.save : `${GestureIcons.save}.fill`
+    return data.saved ? 'bookmark-simple' : 'bookmark-simple-fill'
   }
 
   if (action === 'hide') {
-    return data.hidden ? GestureIcons.hide : `${GestureIcons.hide}.fill`
+    return data.hidden ? 'eye-slash' : 'eye'
   }
 
-  return `${GestureIcons[action]}.fill`
+  if (action === 'reply') {
+    return 'arrow-bend-up-left-bold'
+  }
+
+  return 'export'
 }

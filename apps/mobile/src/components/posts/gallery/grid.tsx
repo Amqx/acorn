@@ -1,14 +1,18 @@
+import { useRecyclingState } from '@shopify/flash-list'
 import { Image } from 'expo-image'
-import { useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { View } from 'react-native'
-import { ResponsiveGrid } from 'react-native-flexible-grid'
-import { StyleSheet } from 'react-native-unistyles'
+import { FlatList } from 'react-native-gesture-handler'
+import { Gallery } from 'react-native-jet-gallery'
+import { StyleSheet, useUnistyles } from 'react-native-unistyles'
 import { useTranslations } from 'use-intl'
+import { useShallow } from 'zustand/react/shallow'
 
-import { Pressable } from '~/components/common/pressable'
-import { VisibilitySensor } from '~/components/common/sensor/visibility'
+import { MediaMenu } from '~/components/common/media-menu'
 import { Text } from '~/components/common/text'
-import { useImagePlaceholder } from '~/hooks/image'
+import { useImageActions } from '~/hooks/image'
+import { usePreferences } from '~/stores/preferences'
+import { space } from '~/styles/tokens'
 import { type PostMedia } from '~/types/post'
 
 import { GalleryBlur } from './blur'
@@ -16,8 +20,7 @@ import { GalleryBlur } from './blur'
 type Props = {
   images: Array<PostMedia>
   nsfw?: boolean
-  onPress: (index: number) => void
-  onLongPress?: () => void
+  onDismiss?: () => void
   recyclingKey?: string
   spoiler?: boolean
 }
@@ -25,128 +28,164 @@ type Props = {
 export function ImageGrid({
   images,
   nsfw = false,
-  onPress,
-  onLongPress,
+  onDismiss,
   recyclingKey,
   spoiler = false,
 }: Props) {
   const t = useTranslations('component.posts.gallery')
-  const a11y = useTranslations('a11y')
 
-  const placeholder = useImagePlaceholder()
+  const { rt } = useUnistyles()
 
-  const [visible, setVisible] = useState(false)
+  const list = useRef<FlatList<PostMedia>>(null)
+
+  useRecyclingState(recyclingKey, [recyclingKey], () => {
+    list.current?.scrollToOffset({
+      animated: false,
+      offset: 0,
+    })
+  })
+
+  const { blurNsfw, blurSpoiler } = usePreferences(
+    useShallow((state) => ({
+      blurNsfw: state.blurNsfw,
+      blurSpoiler: state.blurSpoiler,
+    })),
+  )
+
+  const { actions } = useImageActions()
+
+  const [width, setWidth] = useState(rt.screen.width)
+
+  const data = useMemo(() => {
+    const ratios = images.map((image) => image.width / image.height)
+
+    const height = Math.min(
+      rt.screen.height * 0.4,
+      Math.round(width / Math.max(...ratios)),
+    )
+
+    const sizes = ratios.map((ratio) => ({
+      height,
+      width: Math.round(ratio * height),
+    }))
+
+    const offsets = sizes.map((_, index) =>
+      sizes
+        .slice(0, index)
+        .reduce((total, size) => total + size.width + space[3], 0),
+    )
+
+    return {
+      height,
+      offsets,
+      sizes,
+    }
+  }, [images, rt.screen.height, width])
 
   if (images.length === 1) {
     const image = images[0]!
 
     return (
-      <Pressable
-        accessibilityLabel={a11y('viewImage')}
-        onLongPress={onLongPress}
-        onPress={() => {
-          onPress(0)
-        }}
-        style={styles.one(image.width / image.height)}
-      >
-        <VisibilitySensor
-          onChange={(next) => {
-            setVisible(next.visible)
+      <Gallery actions={actions} images={[image]} onDismiss={onDismiss}>
+        <Gallery.Image
+          index={0}
+          onLongPress={(event) => {
+            MediaMenu.call({
+              type: 'image',
+              url: event.url,
+            })
           }}
+          style={styles.one(image.width / image.height)}
         >
           <Image
-            {...placeholder}
             accessibilityIgnoresInvertColors
-            priority={visible ? 'high' : 'low'}
             recyclingKey={recyclingKey}
-            source={image.thumbnail}
+            source={image.url}
             style={styles.image}
           />
+        </Gallery.Image>
 
-          {nsfw || spoiler ? (
-            <GalleryBlur label={t(spoiler ? 'spoiler' : 'nsfw')} />
-          ) : null}
+        {(nsfw && blurNsfw) || (spoiler && blurSpoiler) ? (
+          <GalleryBlur label={t(spoiler ? 'spoiler' : 'nsfw')} />
+        ) : null}
 
-          {image.type === 'gif' ? (
-            <View style={[styles.label, styles.gif]}>
-              <Text contrast size="1" weight="medium">
-                {t('gif')}
-              </Text>
-            </View>
-          ) : null}
-        </VisibilitySensor>
-      </Pressable>
+        {image.type === 'gif' ? (
+          <View pointerEvents="none" style={[styles.label, styles.gif]}>
+            <Text contrast size="1" weight="medium">
+              {t('gif')}
+            </Text>
+          </View>
+        ) : null}
+      </Gallery>
     )
   }
 
-  const data = images.slice(0, 4)
-
   return (
-    <VisibilitySensor
-      onChange={(next) => {
-        setVisible(next.visible)
-      }}
-    >
-      <ResponsiveGrid
-        data={data.map((image, index) => ({
-          ...image,
-          widthRatio: data.length === 3 && index === 0 ? 2 : undefined,
-        }))}
-        keyExtractor={(item: PostMedia) => item.url}
-        maxItemsPerColumn={2}
-        renderItem={({ index, item }: { index: number; item: PostMedia }) => (
-          <Pressable
-            accessibilityLabel={a11y('viewImage')}
-            onLongPress={onLongPress}
-            onPress={() => {
-              onPress(index)
-            }}
-            style={styles.image}
-          >
-            <Image
-              {...placeholder}
-              accessibilityIgnoresInvertColors
-              priority={visible ? 'high' : 'low'}
-              recyclingKey={recyclingKey}
-              source={item.thumbnail}
-              style={styles.image}
-            />
+    <>
+      <Gallery actions={actions} images={images} onDismiss={onDismiss}>
+        <FlatList
+          contentContainerStyle={styles.carousel(data.height)}
+          data={images}
+          decelerationRate="fast"
+          horizontal
+          keyExtractor={(item) => item.url}
+          onLayout={(event) => {
+            setWidth(event.nativeEvent.layout.width)
+          }}
+          ref={list}
+          renderItem={({ index, item }) => (
+            <>
+              <Gallery.Image
+                index={index}
+                onLongPress={(event) => {
+                  MediaMenu.call({
+                    type: 'image',
+                    url: event.url,
+                  })
+                }}
+              >
+                <Image
+                  accessibilityIgnoresInvertColors
+                  recyclingKey={recyclingKey}
+                  source={item.url}
+                  style={[styles.slide, data.sizes[index]]}
+                />
+              </Gallery.Image>
 
-            {nsfw || spoiler ? (
-              <GalleryBlur label={t(spoiler ? 'spoiler' : 'nsfw')} />
-            ) : null}
+              {(nsfw && blurNsfw) || (spoiler && blurSpoiler) ? (
+                <GalleryBlur label={t(spoiler ? 'spoiler' : 'nsfw')} />
+              ) : null}
 
-            {item.type === 'gif' ? (
-              <View style={[styles.label, styles.gif]}>
-                <Text contrast size="1" weight="medium">
-                  {t('gif')}
-                </Text>
-              </View>
-            ) : null}
-          </Pressable>
-        )}
-      />
+              {item.type === 'gif' ? (
+                <View pointerEvents="none" style={[styles.label, styles.gif]}>
+                  <Text contrast size="1" weight="medium">
+                    {t('gif')}
+                  </Text>
+                </View>
+              ) : null}
+            </>
+          )}
+          showsHorizontalScrollIndicator={false}
+          snapToOffsets={data.offsets}
+        />
+      </Gallery>
 
-      {images.length > 4 ? (
-        <View style={[styles.label, styles.count]}>
-          <Text contrast size="1" weight="medium">
-            {t('items', {
-              count: images.length,
-            })}
-          </Text>
-        </View>
-      ) : null}
-    </VisibilitySensor>
+      <View pointerEvents="none" style={[styles.label, styles.count]}>
+        <Text contrast size="1" weight="medium">
+          {t('items', {
+            count: images.length,
+          })}
+        </Text>
+      </View>
+    </>
   )
 }
 
 const styles = StyleSheet.create((theme) => ({
-  blur: {
-    ...StyleSheet.absoluteFill,
-    alignItems: 'center',
-    gap: theme.space[4],
-    justifyContent: 'center',
-  },
+  carousel: (height: number) => ({
+    gap: theme.space[3],
+    height,
+  }),
   count: {
     right: theme.space[2],
   },
@@ -154,6 +193,8 @@ const styles = StyleSheet.create((theme) => ({
     left: theme.space[2],
   },
   image: {
+    borderCurve: 'continuous',
+    borderRadius: theme.radius[4],
     height: '100%',
     width: '100%',
   },
@@ -166,11 +207,11 @@ const styles = StyleSheet.create((theme) => ({
     paddingVertical: theme.space[1] / 2,
     position: 'absolute',
   },
-  more: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: theme.colors.black.accentAlpha,
-  },
   one: (aspectRatio: number) => ({
     aspectRatio,
   }),
+  slide: {
+    borderCurve: 'continuous',
+    borderRadius: theme.radius[4],
+  },
 }))

@@ -1,0 +1,208 @@
+import { useHeaderHeight } from 'expo-router/react-navigation'
+import { useCallback, useRef, useState } from 'react'
+import { View } from 'react-native'
+import { useBottomTabBarHeight } from 'react-native-bottom-tabs'
+import {
+  type NavigationState,
+  type SceneRendererProps,
+  TabView,
+} from 'react-native-tab-view'
+import { StyleSheet } from 'react-native-unistyles'
+import { useDebounce } from 'use-debounce'
+import { useTranslations } from 'use-intl'
+import { useShallow } from 'zustand/react/shallow'
+
+import { Loading } from '~/components/common/loading'
+import { SearchBox } from '~/components/common/search'
+import { SegmentedControl } from '~/components/common/segmented-control'
+import { type TextInput } from '~/components/native/text-input'
+import { SortIntervalMenu } from '~/components/posts/sort-interval'
+import { SearchList } from '~/components/search/list'
+import { useListProps } from '~/hooks/list'
+import { useTabPress } from '~/hooks/tabs'
+import { glass, iOS26, iPad } from '~/lib/common'
+import { useDefaults } from '~/stores/defaults'
+import { usePreferences } from '~/stores/preferences'
+import { type SearchTab } from '~/types/defaults'
+
+const routes = useDefaults
+  .getState()
+  .searchTabs.filter(({ disabled }) => !disabled)
+  .map(({ key }) => ({
+    key,
+    title: key,
+  }))
+
+export default function Screen() {
+  const headerHeight = useHeaderHeight()
+  const tabBarHeight = useBottomTabBarHeight()
+
+  const t = useTranslations('screen.search')
+
+  styles.useVariants({
+    glass,
+    iPad,
+  })
+
+  const { intervalSearchPosts, sortSearchPosts } = usePreferences(
+    useShallow((state) => ({
+      intervalSearchPosts: state.intervalSearchPosts,
+      sortSearchPosts: state.sortSearchPosts,
+    })),
+  )
+
+  const search = useRef<TextInput>(null)
+
+  const [sort, setSort] = useState(sortSearchPosts)
+  const [interval, setInterval] = useState(intervalSearchPosts)
+
+  const [index, setIndex] = useState(0)
+  const [query, setQuery] = useState('')
+
+  const [debounced] = useDebounce(query, 500)
+
+  useTabPress('tabPress', () => {
+    search.current?.focus()
+  })
+
+  const listProps = useListProps(true)
+
+  const props = {
+    listProps,
+    onChangeQuery: setQuery,
+    query: debounced,
+  } as const
+
+  const renderScene = useCallback(
+    ({
+      route,
+    }: SceneRendererProps & {
+      route: {
+        key: SearchTab
+        title: SearchTab
+      }
+    }) => {
+      if (route.key === 'post') {
+        return (
+          <SearchList
+            {...props}
+            header={
+              <SortIntervalMenu
+                interval={interval}
+                onChange={(next) => {
+                  setSort(next.sort)
+
+                  if (next.interval) {
+                    setInterval(next.interval)
+                  }
+                }}
+                sort={sort}
+                type="search"
+              />
+            }
+            interval={interval}
+            sort={sort}
+            type="post"
+          />
+        )
+      }
+
+      if (route.key === 'community') {
+        return <SearchList {...props} type="community" />
+      }
+
+      return <SearchList {...props} type="user" />
+    },
+    [interval, props, sort],
+  )
+
+  const renderTabBar = useCallback(
+    ({
+      jumpTo,
+      navigationState,
+    }: SceneRendererProps & {
+      navigationState: NavigationState<{
+        key: SearchTab
+        title: SearchTab
+      }>
+    }) => (
+      <View style={styles.tabBar(headerHeight, tabBarHeight)}>
+        <SearchBox
+          glass
+          onChange={setQuery}
+          placeholder="search"
+          ref={search}
+          style={styles.search}
+          value={query}
+        />
+
+        <SegmentedControl
+          items={routes.map(({ key }) => ({
+            key,
+            label: t(`tabs.${key}`),
+          }))}
+          onChange={(next) => {
+            jumpTo(next)
+          }}
+          value={navigationState.routes[navigationState.index]?.key}
+        />
+      </View>
+    ),
+    [headerHeight, query, t, tabBarHeight],
+  )
+
+  return (
+    <TabView
+      lazy
+      navigationState={{
+        index,
+        routes,
+      }}
+      onIndexChange={setIndex}
+      renderLazyPlaceholder={() => <Loading />}
+      renderScene={renderScene}
+      renderTabBar={renderTabBar}
+    />
+  )
+}
+
+const styles = StyleSheet.create((theme, runtime) => ({
+  clear: {
+    height: theme.space[7],
+    width: theme.space[7],
+  },
+  query: {
+    backgroundColor: theme.colors.gray.uiActiveAlpha,
+    borderWidth: 0,
+  },
+  search: {
+    borderCurve: 'continuous',
+    borderRadius: theme.space[8],
+    variants: {
+      glass: {
+        false: {
+          backgroundColor: theme.colors.gray.ui,
+        },
+      },
+    },
+  },
+  tabBar: (headerHeight: number, tabBarHeight: number) => ({
+    gap: theme.space[4],
+    padding: theme.space[4],
+    variants: {
+      iPad: {
+        false: {
+          paddingTop:
+            headerHeight + runtime.insets.top + (iOS26 ? 0 : theme.space[4]),
+        },
+        true: {
+          paddingTop:
+            headerHeight +
+            tabBarHeight +
+            runtime.insets.top +
+            (iOS26 ? 0 : theme.space[4]),
+        },
+      },
+    },
+  }),
+}))

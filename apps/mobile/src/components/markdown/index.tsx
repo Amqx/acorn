@@ -1,13 +1,15 @@
 import { useMemo } from 'react'
+import { Gallery } from 'react-native-jet-gallery'
 import { StyleSheet } from 'react-native-unistyles'
+import { useShallow } from 'zustand/react/shallow'
 
-import { useImagePreview } from '~/hooks/image'
+import { useImageActions } from '~/hooks/image'
 import { useLink } from '~/hooks/link'
 import { type Font, fonts } from '~/lib/fonts'
 import { mergeMetaMarkdown } from '~/lib/markdown'
 import { usePreferences } from '~/stores/preferences'
 import { addTextSize } from '~/styles/text'
-import { type TypographyToken } from '~/styles/tokens'
+import { radius, type TypographyToken } from '~/styles/tokens'
 import { type PostMediaMeta } from '~/types/post'
 
 import { MarkdownViewer } from '../native/markdown'
@@ -21,19 +23,21 @@ type Props = {
 export function Markdown({ children, meta, type = 'post' }: Props) {
   const {
     font,
+    fontBold,
     fontScaling,
     fontSizePostBody,
     fontSizeCommentBody,
     systemScaling,
-  } = usePreferences([
-    'font',
-    'fontScaling',
-    'fontSizeCommentBody',
-    'fontSizePostBody',
-    'systemScaling',
-  ])
-
-  const size = type === 'post' ? fontSizePostBody : fontSizeCommentBody
+  } = usePreferences(
+    useShallow((state) => ({
+      font: state.font,
+      fontBold: state.fontBold,
+      fontScaling: state.fontScaling,
+      fontSizeCommentBody: state.fontSizeCommentBody,
+      fontSizePostBody: state.fontSizePostBody,
+      systemScaling: state.systemScaling,
+    })),
+  )
 
   const markdown = useMemo(
     () => mergeMetaMarkdown(children, meta),
@@ -41,19 +45,33 @@ export function Markdown({ children, meta, type = 'post' }: Props) {
   )
 
   const { handleLink } = useLink()
-  const { preview } = useImagePreview()
+
+  const { actions } = useImageActions()
+
+  const size = type === 'post' ? fontSizePostBody : fontSizeCommentBody
 
   return (
     <MarkdownViewer
       allowFontScaling={systemScaling}
       markdown={markdown}
       onImagePress={(image) => {
-        preview([image])
+        Gallery.open({
+          actions,
+          images: [
+            {
+              url: image.url,
+            },
+          ],
+          origin: {
+            ...image,
+            borderRadius: radius[4],
+          },
+        })
       }}
       onLinkPress={(event) => {
         handleLink(event.url)
       }}
-      style={styles.main(font, systemScaling ? 1 : fontScaling, size)}
+      style={styles.main(font, systemScaling ? 1 : fontScaling, fontBold, size)}
       uniProps={(theme) => ({
         styles: {
           blockQuote: {
@@ -100,6 +118,7 @@ export function Markdown({ children, meta, type = 'post' }: Props) {
           },
           listMarker: {
             color: theme.colors.gray.textLow,
+            width: theme.space[4],
           },
           spoiler: {
             backgroundColor: theme.colors.accent.accent,
@@ -131,10 +150,16 @@ export function Markdown({ children, meta, type = 'post' }: Props) {
 }
 
 const styles = StyleSheet.create((theme) => ({
-  main: (font: Font, scaling: number, size: TypographyToken) => ({
+  main: (
+    font: Font,
+    scaling: number,
+    bold: boolean,
+    size: TypographyToken,
+  ) => ({
     color: theme.colors.gray.text,
     fontFamily: fonts[font],
     fontSize: theme.typography[size].fontSize * scaling,
+    fontWeight: bold ? 'bold' : undefined,
     gap: theme.space[3],
     lineHeight: theme.typography[size].lineHeight * scaling,
   }),

@@ -1,37 +1,29 @@
-import { type SFSymbol, type SymbolWeight } from 'expo-symbols'
+import { type ReactNode } from 'react'
 import { type Insets, type StyleProp, type ViewStyle } from 'react-native'
 import { StyleSheet } from 'react-native-unistyles'
 
-import { type ColorToken, type SpaceToken } from '~/styles/tokens'
+import { type SpaceToken } from '~/styles/tokens'
 
 import { Pressable } from '../pressable'
-import { Spinner } from '../spinner'
-import { Icon } from '.'
 
 type Props = {
-  color?: ColorToken
-  contrast?: boolean
+  accessibilityLabel: string
+  children: ReactNode
   disabled?: boolean
+  header?: boolean
   hitSlop?: number | Insets
-  icon: SFSymbol
-  label: string
-  loading?: boolean
   onLongPress?: () => void
   onPress?: () => void
   size?: SpaceToken
   style?: StyleProp<ViewStyle>
-  weight?: SymbolWeight
 }
 
 export function IconButton({
-  color = 'accent',
-  contrast,
+  accessibilityLabel,
+  children,
   disabled,
+  header,
   hitSlop,
-  icon,
-  label,
-  weight,
-  loading,
   onLongPress,
   onPress,
   size = '8',
@@ -39,30 +31,15 @@ export function IconButton({
 }: Props) {
   return (
     <Pressable
-      accessibilityLabel={label}
-      disabled={disabled || loading}
-      hitSlop={hitSlop}
+      accessibilityLabel={accessibilityLabel}
+      accessibilityRole="button"
+      disabled={disabled}
+      hitSlop={header ? 16 : hitSlop}
       onLongPress={onLongPress}
       onPress={onPress}
-      style={[styles.main(size), style]}
+      style={[styles.main(header ? '5' : size), style]}
     >
-      {loading ? (
-        <Spinner
-          uniProps={(theme) => ({
-            color: theme.colors[color][contrast ? 'contrast' : 'accent'],
-            size: theme.space[5],
-          })}
-        />
-      ) : (
-        <Icon
-          name={icon}
-          uniProps={(theme) => ({
-            size: theme.space[5],
-            tintColor: theme.colors[color][contrast ? 'contrast' : 'accent'],
-          })}
-          weight={weight}
-        />
-      )}
+      {children}
     </Pressable>
   )
 }

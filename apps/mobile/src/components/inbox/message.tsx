@@ -3,11 +3,10 @@ import { last } from 'lodash'
 import { View } from 'react-native'
 import { StyleSheet } from 'react-native-unistyles'
 import { useFormatter, useNow, useTranslations } from 'use-intl'
+import { useShallow } from 'zustand/react/shallow'
 
 import { useMarkAsRead } from '~/hooks/mutations/users/notifications'
 import { useAuth } from '~/stores/auth'
-import { usePreferences } from '~/stores/preferences'
-import { oledTheme } from '~/styles/oled'
 import { space } from '~/styles/tokens'
 import { type Message } from '~/types/message'
 
@@ -23,10 +22,6 @@ type Props = {
 export function MessageCard({ message }: Props) {
   const router = useRouter()
 
-  const { accountId } = useAuth(['accountId'])
-
-  const { themeOled } = usePreferences(['themeOled'])
-
   const a11y = useTranslations('a11y')
   const f = useFormatter()
   const now = useNow({
@@ -34,9 +29,14 @@ export function MessageCard({ message }: Props) {
   })
 
   styles.useVariants({
-    oled: themeOled,
     unread: message.new,
   })
+
+  const { accountId } = useAuth(
+    useShallow((state) => ({
+      accountId: state.accountId,
+    })),
+  )
 
   const { mark } = useMarkAsRead()
 
@@ -94,7 +94,7 @@ export function MessageCard({ message }: Props) {
       </View>
 
       <Icon
-        name="chevron.right"
+        name="caret-right"
         uniProps={(theme) => ({
           color: theme.colors.gray.accent,
           size: theme.space[4],
@@ -114,16 +114,10 @@ const styles = StyleSheet.create((theme) => ({
   },
   main: {
     alignItems: 'center',
-    backgroundColor: theme.colors.gray.bgAltAlpha,
     flexDirection: 'row',
     gap: theme.space[4],
     padding: theme.space[4],
     variants: {
-      oled: {
-        true: {
-          backgroundColor: oledTheme[theme.variant].bgAlpha,
-        },
-      },
       unread: {
         true: {
           backgroundColor: theme.colors.accent.uiAlpha,

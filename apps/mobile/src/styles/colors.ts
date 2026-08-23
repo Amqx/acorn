@@ -8,7 +8,7 @@ import { type ColorToken } from './tokens'
 
 type RadixColor = keyof typeof colors
 
-export type ColorScale =
+type ColorScale =
   | 'bg'
   | 'bgAlt'
   | 'ui'
@@ -22,8 +22,8 @@ export type ColorScale =
   | 'textLow'
   | 'text'
 
-export type ColorScaleAlpha = `${ColorScale}Alpha`
-export type ColorScaleExtras = 'contrast'
+type ColorScaleAlpha = `${ColorScale}Alpha`
+type ColorScaleExtras = 'contrast'
 
 export type BlackAndWhite = ColorScaleAlpha
 export type Colors = ColorScale | ColorScaleAlpha | ColorScaleExtras
@@ -58,6 +58,12 @@ export function createPalette(color: PaletteColor, dark?: boolean) {
     teal: getColors<Colors>(`teal${suffix}`, `teal${suffix}A`),
     tomato: getColors<Colors>(`tomato${suffix}`, `tomato${suffix}A`),
     violet: getColors<Colors>(`violet${suffix}`, `violet${suffix}A`),
+
+    ui: {
+      bg: dark ? 'rgb(10, 10, 10)' : 'rgb(245, 245, 245)',
+      bgAlpha: dark ? 'rgba(10, 10, 10, 0.9)' : 'rgba(245, 245, 245, 0.9)',
+      overlay: dark ? 'rgba(245, 245, 245, 0.1)' : 'rgba(10, 10, 10, 0.1)',
+    },
   }
 }
 
@@ -85,7 +91,7 @@ function getGray(color: PaletteColor) {
   return 'gray'
 }
 
-export function getColors<Palette extends Colors>(...names: Array<RadixColor>) {
+function getColors<Palette extends Colors>(...names: Array<RadixColor>) {
   const palette: Array<[string, string]> = []
 
   for (const name of names) {

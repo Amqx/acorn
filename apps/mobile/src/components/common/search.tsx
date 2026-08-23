@@ -1,5 +1,7 @@
+import { type Ref } from 'react'
 import {
   type StyleProp,
+  type TextInput,
   type TextInputProps,
   type ViewStyle,
 } from 'react-native'
@@ -12,17 +14,21 @@ import { TextBox } from '~/components/common/text-box'
 import { IconButton } from './icon/button'
 
 type Props = {
+  glass?: boolean
   onChange?: (value: string) => void
   onSubmitEditing?: TextInputProps['onSubmitEditing']
   placeholder?: 'search' | 'filter'
+  ref?: Ref<TextInput>
   style?: StyleProp<ViewStyle>
   value?: string
 }
 
 export function SearchBox({
+  glass,
   onChange,
   onSubmitEditing,
   placeholder = 'filter',
+  ref,
   style,
   value,
 }: Props) {
@@ -34,30 +40,37 @@ export function SearchBox({
       autoCapitalize="none"
       autoComplete="off"
       autoCorrect={false}
+      glass={glass}
       left={
         <Icon
-          name="magnifyingglass"
+          name="magnifying-glass"
           style={styles.icon}
           uniProps={(theme) => ({
-            tintColor: theme.colors.gray.accent,
+            color: theme.colors.gray.textLow,
           })}
         />
       }
       onChangeText={onChange}
       onSubmitEditing={onSubmitEditing}
       placeholder={t(placeholder)}
+      ref={ref}
       returnKeyType="search"
       right={
         value?.length ? (
           <IconButton
-            color="gray"
-            icon="xmark.circle.fill"
-            label={a11y('clearQuery')}
+            accessibilityLabel={a11y('clearQuery')}
             onPress={() => {
               onChange?.('')
             }}
             style={styles.clear}
-          />
+          >
+            <Icon
+              name="x-circle-fill"
+              uniProps={(theme) => ({
+                color: theme.colors.gray.text,
+              })}
+            />
+          </IconButton>
         ) : null
       }
       style={[styles.main, style]}
@@ -68,8 +81,8 @@ export function SearchBox({
 
 const styles = StyleSheet.create((theme) => ({
   clear: {
-    height: theme.space[7],
-    width: theme.space[7],
+    height: theme.space[8],
+    width: theme.space[8],
   },
   icon: {
     marginLeft: theme.space[3],

@@ -2,6 +2,7 @@ import { Image } from 'expo-image'
 import { View } from 'react-native'
 import { StyleSheet } from 'react-native-unistyles'
 import { useTranslations } from 'use-intl'
+import { useShallow } from 'zustand/react/shallow'
 
 import { Icon } from '~/components/common/icon'
 import { Pressable } from '~/components/common/pressable'
@@ -23,9 +24,9 @@ type Props = {
 }
 
 export function PostLinkCard({
-  compact,
-  crossPost,
-  large,
+  compact = false,
+  crossPost = false,
+  large = false,
   media,
   recyclingKey,
   url,
@@ -33,18 +34,19 @@ export function PostLinkCard({
 }: Props) {
   const a11y = useTranslations('a11y')
 
-  const { seenOnMedia, themeOled } = usePreferences([
-    'seenOnMedia',
-    'themeOled',
-  ])
   const { handleLink } = useLink()
   const { addPost } = useHistory()
+
+  const { seenOnMedia } = usePreferences(
+    useShallow((state) => ({
+      seenOnMedia: state.seenOnMedia,
+    })),
+  )
 
   styles.useVariants({
     compact,
     crossPost,
     large,
-    oled: themeOled,
   })
 
   const placeholder = useImagePlaceholder()
@@ -77,9 +79,9 @@ export function PostLinkCard({
 
         <View style={styles.icon}>
           <Icon
-            name="safari"
+            name="compass"
             uniProps={(theme) => ({
-              tintColor: theme.colors.accent.accent,
+              color: theme.colors.accent.accent,
             })}
           />
         </View>
@@ -106,7 +108,7 @@ export function PostLinkCard({
 
       <View style={styles.link}>
         <Icon
-          name="safari"
+          name="compass"
           uniProps={(theme) => ({
             size: theme.typography[2].lineHeight,
           })}
@@ -128,9 +130,11 @@ const styles = StyleSheet.create((theme) => ({
     justifyContent: 'center',
   },
   image: {
-    aspectRatio: 2,
     variants: {
       compact: {
+        false: {
+          aspectRatio: 16 / 9,
+        },
         true: {
           flex: 1,
         },
@@ -144,32 +148,45 @@ const styles = StyleSheet.create((theme) => ({
     padding: theme.space[3],
   },
   main: {
-    backgroundColor: theme.colors.gray.uiActive,
+    backgroundColor: theme.colors.gray.bgAlt,
     borderCurve: 'continuous',
     borderRadius: theme.radius[4],
-    overflow: 'hidden',
-    variants: {
-      crossPost: {
-        true: {
-          marginTop: theme.space[3],
+    compoundVariants: [
+      {
+        compact: false,
+        crossPost: false,
+        styles: {
+          marginHorizontal: -theme.space[3],
         },
       },
-      large: {
-        false: {
-          borderRadius: theme.space[1],
-          height: theme.space[8],
-          width: theme.space[8],
-        },
-        true: {
-          borderRadius: theme.space[2],
+      {
+        compact: true,
+        large: true,
+        styles: {
+          borderRadius: theme.space[1] * 2,
           height: theme.space[8] * 2,
           width: theme.space[8] * 2,
         },
       },
-      oled: {
-        true: {
-          backgroundColor: theme.colors.gray.bgAlt,
+      {
+        compact: true,
+        large: false,
+        styles: {
+          borderRadius: theme.space[1],
+          height: theme.space[8],
+          width: theme.space[8],
         },
+      },
+    ],
+    overflow: 'hidden',
+    variants: {
+      crossPost: {
+        true: {
+          backgroundColor: theme.colors.gray.ui,
+        },
+      },
+      large: {
+        true: {},
       },
     },
   },

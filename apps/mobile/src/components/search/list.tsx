@@ -1,4 +1,4 @@
-import { type ListRenderItem } from '@shopify/flash-list'
+import { FlashList, type ListRenderItem } from '@shopify/flash-list'
 import { type ReactElement, useCallback } from 'react'
 import { type StyleProp, View, type ViewStyle } from 'react-native'
 import { StyleSheet } from 'react-native-unistyles'
@@ -9,18 +9,15 @@ import { Loading } from '~/components/common/loading'
 import { RefreshControl } from '~/components/common/refresh-control'
 import { CommunityCard } from '~/components/communities/card'
 import { PostCard } from '~/components/posts/card'
+import { type ListProps } from '~/hooks/list'
 import { useSearch } from '~/hooks/queries/search/search'
 import { useSearchHistory } from '~/hooks/search'
-import { cardMaxWidth, iPad } from '~/lib/common'
-import { listProps } from '~/lib/list'
-import { usePreferences } from '~/stores/preferences'
 import { type Community } from '~/types/community'
 import { type SearchTab } from '~/types/defaults'
 import { type Post } from '~/types/post'
 import { type SearchSort, type TopInterval } from '~/types/sort'
 import { type User } from '~/types/user'
 
-import { SensorList } from '../common/sensor/list'
 import { UserCard } from '../users/card'
 import { SearchHistory } from './history'
 
@@ -30,6 +27,7 @@ type Props = {
   community?: string
   header?: ReactElement
   interval?: TopInterval
+  listProps?: ListProps
   onChangeQuery: (query: string) => void
   query: string
   sort?: SearchSort
@@ -41,6 +39,7 @@ export function SearchList({
   community,
   header,
   interval,
+  listProps,
   onChangeQuery,
   query,
   sort,
@@ -48,17 +47,6 @@ export function SearchList({
   type,
 }: Props) {
   const t = useTranslations('component.search.list')
-
-  const { feedCompact, themeOled } = usePreferences([
-    'feedCompact',
-    'themeOled',
-  ])
-
-  styles.useVariants({
-    compact: feedCompact,
-    iPad,
-    oled: themeOled,
-  })
 
   const history = useSearchHistory(community)
 
@@ -86,12 +74,9 @@ export function SearchList({
   )
 
   return (
-    <SensorList
+    <FlashList
       {...listProps}
-      contentContainerStyle={StyleSheet.flatten([
-        type !== 'post' && styles.content,
-        style,
-      ])}
+      contentContainerStyle={style}
       data={results}
       getItemType={(item) => (type === 'post' ? (item as Post).type : type)}
       ItemSeparatorComponent={() =>
@@ -108,13 +93,10 @@ export function SearchList({
         ) : history.history.length > 0 ? (
           <SearchHistory history={history} onChange={onChangeQuery} />
         ) : (
-          <Empty icon="magnifyingglass" message={t(`empty.${type}`)} />
+          <Empty icon="magnifying-glass" message={t(`empty.${type}`)} />
         )
       }
       ListHeaderComponent={header}
-      maintainVisibleContentPosition={{
-        disabled: true,
-      }}
       onScrollBeginDrag={() => {
         history.save(query)
       }}
@@ -125,30 +107,8 @@ export function SearchList({
 }
 
 const styles = StyleSheet.create((theme) => ({
-  content: {
-    paddingVertical: theme.space[2],
-  },
   separator: {
-    alignSelf: 'center',
-    height: theme.space[4],
-    variants: {
-      compact: {
-        true: {
-          height: theme.space[2],
-        },
-      },
-      iPad: {
-        true: {
-          maxWidth: cardMaxWidth,
-        },
-      },
-      oled: {
-        true: {
-          backgroundColor: theme.colors.gray.border,
-          height: 1,
-        },
-      },
-    },
-    width: '100%',
+    backgroundColor: theme.colors.gray.border,
+    height: 1,
   },
 }))

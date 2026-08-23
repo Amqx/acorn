@@ -5,13 +5,14 @@ import { File, Paths } from 'expo-file-system'
 import { type ImageProps } from 'expo-image'
 import { Album, Asset, requestPermissionsAsync } from 'expo-media-library'
 import { compact } from 'lodash'
-import { useCallback, useRef } from 'react'
+import { useMemo, useRef } from 'react'
 import { Share } from 'react-native'
+import { type GalleryAction } from 'react-native-jet-gallery'
 import { useUnistyles } from 'react-native-unistyles'
 import { toast } from 'sonner-native'
 import { useTranslations } from 'use-intl'
+import { useShallow } from 'zustand/react/shallow'
 
-import { Gallery, type GalleryImage } from '@/gallery'
 import placeholderDark from '~/assets/images/placeholder-dark.png'
 import placeholderLight from '~/assets/images/placeholder-light.png'
 import { usePreferences } from '~/stores/preferences'
@@ -25,6 +26,43 @@ export function useImagePlaceholder() {
   } satisfies ImageProps
 }
 
+export function useImageActions() {
+  const { copy } = useCopyImage()
+  const { share } = useShareImage()
+  const { download } = useDownloadImage()
+
+  const actions = useMemo<Array<GalleryAction>>(
+    () => [
+      {
+        icon: 'square.and.arrow.up',
+        id: 'share',
+        onPress(payload) {
+          share(payload)
+        },
+      },
+      {
+        icon: 'square.on.square',
+        id: 'copy',
+        onPress(payload) {
+          copy(payload)
+        },
+      },
+      {
+        icon: 'square.and.arrow.down',
+        id: 'download',
+        onPress(payload) {
+          download(payload)
+        },
+      },
+    ],
+    [copy, download, share],
+  )
+
+  return {
+    actions,
+  }
+}
+
 type DownloadImageVariables = {
   url: string
 }
@@ -32,7 +70,11 @@ type DownloadImageVariables = {
 export function useDownloadImage() {
   const t = useTranslations('toasts.image')
 
-  const { saveToAlbum } = usePreferences(['saveToAlbum'])
+  const { saveToAlbum } = usePreferences(
+    useShallow((state) => ({
+      saveToAlbum: state.saveToAlbum,
+    })),
+  )
 
   const id = useRef<string | number>(undefined)
 
@@ -96,7 +138,11 @@ type DownloadImagesVariables = {
 export function useDownloadImages() {
   const t = useTranslations('toasts.image')
 
-  const { saveToAlbum } = usePreferences(['saveToAlbum'])
+  const { saveToAlbum } = usePreferences(
+    useShallow((state) => ({
+      saveToAlbum: state.saveToAlbum,
+    })),
+  )
 
   const id = useRef<string | number>(undefined)
 
@@ -254,39 +300,6 @@ export function useShareImage() {
     isPending,
     isSuccess,
     share: mutate,
-  }
-}
-
-export function useImagePreview() {
-  const { theme } = useUnistyles()
-
-  const preview = useCallback(
-    (images: Array<GalleryImage>, index?: number) => {
-      Gallery.open({
-        actions: [
-          {
-            icon: 'square.and.arrow.up',
-            id: 'share',
-          },
-          {
-            icon: 'square.on.square',
-            id: 'copy',
-          },
-          {
-            icon: 'square.and.arrow.down',
-            id: 'download',
-          },
-        ],
-        images,
-        index,
-        theme: theme.variant,
-      })
-    },
-    [theme.variant],
-  )
-
-  return {
-    preview,
   }
 }
 

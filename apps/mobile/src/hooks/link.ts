@@ -7,6 +7,7 @@ import { useCallback } from 'react'
 import { useUnistyles } from 'react-native-unistyles'
 import { toast } from 'sonner-native'
 import { useTranslations } from 'use-intl'
+import { useShallow } from 'zustand/react/shallow'
 
 import { lockOrientation, unlockOrientation } from '~/lib/orientation'
 import { Sentry } from '~/lib/sentry'
@@ -21,10 +22,12 @@ export function useLink() {
 
   const t = useTranslations('toasts.link')
 
-  const { linkBrowser, oldReddit } = usePreferences([
-    'linkBrowser',
-    'oldReddit',
-  ])
+  const { linkBrowser, oldReddit } = usePreferences(
+    useShallow((state) => ({
+      linkBrowser: state.linkBrowser,
+      oldReddit: state.oldReddit,
+    })),
+  )
 
   const { setFocused } = useFocused()
 
@@ -180,7 +183,7 @@ export function useLink() {
 const linkRegex =
   /^(?:https?:\/\/)?(?:www\.|amp\.|i\.)?reddit\.com\/(?:user\/([^/]+)(?:\/m\/([^/]+)|\/comments\/([^/]+)(?:\/comment\/([^/]+))?(?:\/\?context=(\d+))?)?|r\/([^/]+)(?:\/comments\/([^/]+)(?:\/[^/]+(?:\/([^/]+))?(?:\/\?context=(\d+))?)?|\/s\/([^/]+)(?:\?context=(\d+))?|\/wiki\/([^/]+))?|live\/([^/]+)(?:\?context=(\d+))?)/i
 
-export function parseLink(url: string): Nullable<{
+function parseLink(url: string): Nullable<{
   commentId?: string
   community?: string
   context?: string
