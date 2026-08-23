@@ -30,16 +30,7 @@ jobs:
         working-directory: apps/mobile
         run: ./scripts/build-unsigned-ipa.sh
 
-      - name: Create GH release
-        uses: softprops/action-gh-release@v2
+      - name: Upload GH artifact
+        uses: actions/upload-artifact@v7
         with:
-          files: apps/mobile/build/Acorn-unsigned.ipa
-          name: Built IPA
-          body: |
-            This IPA is **unsigned** — sideload it with Sideloadly, AltStore or SideStore,
-            or re-sign it yourself before installing.
-          generate_release_notes: true
-          draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          path: apps/mobile/build/Acorn-unsigned.ipa
