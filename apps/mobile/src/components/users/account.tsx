@@ -26,6 +26,10 @@ export function AccountCard({
 }: Props) {
   const a11y = useTranslations('a11y')
 
+  styles.useVariants({
+    selected: account.id === selected,
+  })
+
   return (
     <Swipeable
       left={
@@ -59,7 +63,7 @@ export function AccountCard({
 
           onClose()
         }}
-        style={[styles.main, account.id === selected && styles.selected]}
+        style={styles.main}
       >
         <Text weight="medium">{account.id}</Text>
       </Pressable>
@@ -74,10 +78,12 @@ const styles = StyleSheet.create((theme) => ({
     gap: theme.space[3],
     height: theme.space[8],
     paddingHorizontal: theme.space[3],
-  },
-  selected: {
-    backgroundColor: theme.colors.accent.uiActive,
-    borderCurve: 'continuous',
-    borderRadius: theme.radius[4],
+    variants: {
+      selected: {
+        true: {
+          backgroundColor: theme.colors.accent.uiActive,
+        },
+      },
+    },
   },
 }))

@@ -94,11 +94,9 @@ export function AccountSwitcher() {
         scrollEnabled={false}
       />
 
-      <Text align="center" m="4" size="2">
+      <Text align="center" highContrast={false} m="4" size="2">
         {t('description')}
       </Text>
-
-      <Sheet.BottomInset />
     </Sheet.Root>
   )
 }
