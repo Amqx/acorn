@@ -23,11 +23,11 @@ export function VideoStatus({ duration, player }: Props) {
   const buffered = useSharedValue(0)
 
   const currentStyle = useAnimatedStyle(() => ({
-    width: `${(current.get() / duration) * 100 || 0}%`,
+    width: `${(current.get() / duration) * 100}%`,
   }))
 
   const bufferedStyle = useAnimatedStyle(() => ({
-    width: `${(buffered.get() / duration) * 100 || 0}%`,
+    width: `${(buffered.get() / duration) * 100}%`,
   }))
 
   useEvent(player, 'onProgress', (event) => {
