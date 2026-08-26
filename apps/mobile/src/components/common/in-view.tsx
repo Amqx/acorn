@@ -1,3 +1,4 @@
+import { useIsFocused } from 'expo-router'
 import { maxBy, range } from 'lodash'
 import { create } from 'mutative'
 import { type ReactNode, useEffect, useRef } from 'react'
@@ -80,9 +81,11 @@ const useStore = createStore<State>()((set) => ({
 }))
 
 export function useInView(id: string) {
+  const focused = useIsFocused()
+
   const inView = useStore(useShallow((state) => state.inView))
 
   const visible = maxBy(inView, 'ratio')
 
-  return visible?.id === id && visible.ratio > 0.4
+  return focused && visible?.id === id && visible.ratio > 0.4
 }
