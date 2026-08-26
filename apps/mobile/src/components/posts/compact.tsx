@@ -56,6 +56,7 @@ export function PostCompactCard({
         {post.type === 'video' && post.media.video ? (
           <PostVideoCard
             compact
+            inView
             large={largeThumbnails}
             nsfw={post.nsfw}
             recyclingKey={post.id}

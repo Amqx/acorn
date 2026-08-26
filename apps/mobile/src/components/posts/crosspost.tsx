@@ -88,6 +88,7 @@ export function CrossPostCard({
       {post.type === 'video' && post.media.video ? (
         <PostVideoCard
           crossPost
+          inView
           nsfw={post.nsfw}
           recyclingKey={recyclingKey}
           spoiler={post.spoiler}
