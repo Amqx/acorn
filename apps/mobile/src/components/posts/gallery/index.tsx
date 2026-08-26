@@ -7,7 +7,6 @@ import { useTranslations } from 'use-intl'
 import { useShallow } from 'zustand/react/shallow'
 
 import { MediaMenu } from '~/components/common/media-menu'
-// import { Gallery } from '~/components/common/gallery'
 import { useHistory } from '~/hooks/history'
 import { useImageActions } from '~/hooks/image'
 import { usePreferences } from '~/stores/preferences'

@@ -10,10 +10,9 @@ import { VideoPlayer } from './player'
 type Props = {
   compact?: boolean
   crossPost?: boolean
-  inView: boolean
   large?: boolean
   nsfw?: boolean
-  recyclingKey?: string
+  recyclingKey: string
   spoiler?: boolean
   video: PostMedia
 }
@@ -21,7 +20,6 @@ type Props = {
 export function RedGifsVideo({
   compact = false,
   crossPost = false,
-  inView,
   large = false,
   nsfw,
   recyclingKey,
@@ -41,7 +39,6 @@ export function RedGifsVideo({
       <VideoPlayer
         compact={compact}
         crossPost={crossPost}
-        inView={inView}
         large={large}
         nsfw={nsfw}
         recyclingKey={recyclingKey}

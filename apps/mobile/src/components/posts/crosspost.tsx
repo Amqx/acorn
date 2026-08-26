@@ -20,7 +20,7 @@ type Props = {
   large?: boolean
   onLongPress?: () => void
   post: Post
-  recyclingKey?: string
+  recyclingKey: string
 }
 
 export function CrossPostCard({
@@ -88,7 +88,6 @@ export function CrossPostCard({
       {post.type === 'video' && post.media.video ? (
         <PostVideoCard
           crossPost
-          inView
           nsfw={post.nsfw}
           recyclingKey={recyclingKey}
           spoiler={post.spoiler}

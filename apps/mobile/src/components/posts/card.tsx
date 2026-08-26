@@ -1,4 +1,3 @@
-import { useRecyclingState } from '@shopify/flash-list'
 import { useRouter } from 'expo-router'
 import { useCallback, useRef, useState } from 'react'
 import { Share, View } from 'react-native'
@@ -86,7 +85,6 @@ export function PostCard({ expanded, post }: Props) {
   const menu = useRef<Sheet>(null)
 
   const [capturing, setCapturing] = useState(false)
-  const [inView, setInView] = useRecyclingState(false, [post.id])
 
   const dimmed = !expanded && dimSeen && post.seen
 
@@ -224,7 +222,7 @@ export function PostCard({ expanded, post }: Props) {
   }
 
   return (
-    <InView id={post.id} onChange={setInView}>
+    <InView id={post.id}>
       <Gestures
         data={{
           hidden: post.hidden,
@@ -281,7 +279,6 @@ export function PostCard({ expanded, post }: Props) {
 
               {post.type === 'video' && post.media.video ? (
                 <PostVideoCard
-                  inView={inView}
                   nsfw={post.nsfw}
                   recyclingKey={post.id}
                   spoiler={post.spoiler}

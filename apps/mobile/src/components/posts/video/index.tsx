@@ -10,10 +10,9 @@ import { RedGifsVideo } from './red-gifs'
 type Props = {
   compact?: boolean
   crossPost?: boolean
-  inView: boolean
   large?: boolean
   nsfw?: boolean
-  recyclingKey?: string
+  recyclingKey: string
   spoiler?: boolean
   thumbnail?: string
   video: PostMedia
@@ -22,37 +21,17 @@ type Props = {
 export function PostVideoCard({
   compact,
   crossPost,
-  inView,
   large,
   nsfw,
   recyclingKey,
   spoiler,
-  // thumbnail,
   video,
 }: Props) {
-  // const { focused } = useFocused()
-
-  // if (!focused) {
-  //   return (
-  //     <VideoPlaceholder
-  //       compact={compact}
-  //       crossPost={crossPost}
-  //       large={large}
-  //       nsfw={nsfw}
-  //       recyclingKey={recyclingKey}
-  //       spoiler={spoiler}
-  //       thumbnail={thumbnail}
-  //       video={video}
-  //     />
-  //   )
-  // }
-
   if (video.provider === 'red-gifs') {
     return (
       <RedGifsVideo
         compact={compact}
         crossPost={crossPost}
-        inView={inView}
         large={large}
         nsfw={nsfw}
         recyclingKey={recyclingKey}
@@ -67,7 +46,6 @@ export function PostVideoCard({
       <VideoPlayer
         compact={compact}
         crossPost={crossPost}
-        inView={inView}
         large={large}
         nsfw={nsfw}
         recyclingKey={recyclingKey}

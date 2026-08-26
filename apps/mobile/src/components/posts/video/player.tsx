@@ -12,6 +12,7 @@ import { useTranslations } from 'use-intl'
 import { useShallow } from 'zustand/react/shallow'
 
 import { Icon } from '~/components/common/icon'
+import { useInView } from '~/components/common/in-view'
 import { MediaMenu } from '~/components/common/media-menu'
 import { Pressable } from '~/components/common/pressable'
 import { Spinner } from '~/components/common/spinner'
@@ -26,10 +27,9 @@ import { VideoStatus } from './status'
 type Props = {
   compact?: boolean
   crossPost?: boolean
-  inView: boolean
   large?: boolean
   nsfw?: boolean
-  recyclingKey?: string
+  recyclingKey: string
   spoiler?: boolean
   video: PostMedia
 }
@@ -37,7 +37,6 @@ type Props = {
 export function VideoPlayer({
   compact = false,
   crossPost = false,
-  inView,
   large = false,
   nsfw,
   recyclingKey,
@@ -97,6 +96,8 @@ export function VideoPlayer({
     setMuted(event.muted)
   })
 
+  const inView = useInView(recyclingKey)
+
   useEffect(() => {
     if (!compact && inView && autoPlay) {
       player.play()
@@ -129,7 +130,13 @@ export function VideoPlayer({
       <VideoView
         autoEnterPictureInPicture={pictureInPicture}
         controls={fullscreen}
-        onFullscreenChange={setFullscreen}
+        onFullscreenChange={(next) => {
+          setFullscreen(next)
+
+          if (!(next || compact) && autoPlay) {
+            player.play()
+          }
+        }}
         pictureInPicture={pictureInPicture}
         player={player}
         pointerEvents="none"

@@ -3,17 +3,17 @@ import { create } from 'mutative'
 import { type ReactNode, useEffect, useRef } from 'react'
 import { View } from 'react-native'
 import { create as createStore } from 'zustand'
+import { useShallow } from 'zustand/react/shallow'
 
 type Props = {
   children: ReactNode
   id: string
-  onChange: (visible: boolean) => void
 }
 
-export function InView({ children, id, onChange }: Props) {
+export function InView({ children, id }: Props) {
   const ref = useRef<View>(null)
 
-  const { inView, set, unset } = useInView()
+  const { set, unset } = useStore()
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -38,12 +38,6 @@ export function InView({ children, id, onChange }: Props) {
     }
   }, [id, set, unset])
 
-  useEffect(() => {
-    const visible = maxBy(inView, 'ratio')
-
-    onChange(visible?.id === id && visible.ratio > 0.4)
-  }, [id, inView, onChange])
-
   return (
     <View collapsable={false} ref={ref}>
       {children}
@@ -60,7 +54,7 @@ type State = {
   unset: (id: string) => void
 }
 
-const useInView = createStore<State>()((set) => ({
+const useStore = createStore<State>()((set) => ({
   inView: [],
   set(id, ratio) {
     set((state) => ({
@@ -84,3 +78,11 @@ const useInView = createStore<State>()((set) => ({
     }))
   },
 }))
+
+export function useInView(id: string) {
+  const inView = useStore(useShallow((state) => state.inView))
+
+  const visible = maxBy(inView, 'ratio')
+
+  return visible?.id === id && visible.ratio > 0.4
+}
