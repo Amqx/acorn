@@ -1,8 +1,12 @@
+import { type SharedValue } from 'react-native-reanimated'
+
 import { MediaMenu } from '~/components/common/media-menu'
+import { useFocused } from '~/hooks/focus'
 // import { useFocused } from '~/hooks/focus'
 import { type PostMedia } from '~/types/post'
 
 import { PostLinkCard } from '../link'
+import { VideoPlaceholder } from './placeholder'
 // import { VideoPlaceholder } from './placeholder'
 import { VideoPlayer } from './player'
 import { RedGifsVideo } from './red-gifs'
@@ -16,6 +20,7 @@ type Props = {
   spoiler?: boolean
   thumbnail?: string
   video: PostMedia
+  viewing?: SharedValue<string | null>
 }
 
 export function PostVideoCard({
@@ -26,10 +31,28 @@ export function PostVideoCard({
   recyclingKey,
   spoiler,
   video,
+  viewing,
 }: Props) {
+  const { focused } = useFocused()
+
   if (video.provider === 'red-gifs') {
     return (
       <RedGifsVideo
+        compact={compact}
+        crossPost={crossPost}
+        large={large}
+        nsfw={nsfw}
+        recyclingKey={recyclingKey}
+        spoiler={spoiler}
+        video={video}
+        viewing={viewing}
+      />
+    )
+  }
+
+  if (!focused) {
+    return (
+      <VideoPlaceholder
         compact={compact}
         crossPost={crossPost}
         large={large}
@@ -51,6 +74,7 @@ export function PostVideoCard({
         recyclingKey={recyclingKey}
         spoiler={spoiler}
         video={video}
+        viewing={viewing}
       />
     )
   }

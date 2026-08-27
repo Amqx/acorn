@@ -133,14 +133,12 @@ export default function getConfig(context: ConfigContext): ExpoConfig {
 
   return withBuildProperties(config, {
     ios: {
-      buildReactNativeFromSource: true,
       extraPods: [
         {
           name: 'ffmpeg-kit-ios-full-gpl',
           podspec: 'https://acorn.blue/ffmpeg-kit-ios-full-gpl.podspec',
         },
       ],
-      reactNativeReleaseLevel: 'canary',
     },
   })
 }

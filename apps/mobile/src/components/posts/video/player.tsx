@@ -1,6 +1,7 @@
 import { useRecyclingState } from '@shopify/flash-list'
 import { useEffect, useRef } from 'react'
 import { View } from 'react-native'
+import { type SharedValue, useAnimatedReaction } from 'react-native-reanimated'
 import { StyleSheet } from 'react-native-unistyles'
 import {
   useEvent,
@@ -8,11 +9,11 @@ import {
   VideoView,
   type VideoViewRef,
 } from 'react-native-video'
+import { scheduleOnRN } from 'react-native-worklets'
 import { useTranslations } from 'use-intl'
 import { useShallow } from 'zustand/react/shallow'
 
 import { Icon } from '~/components/common/icon'
-import { useInView } from '~/components/common/in-view'
 import { MediaMenu } from '~/components/common/media-menu'
 import { Pressable } from '~/components/common/pressable'
 import { Spinner } from '~/components/common/spinner'
@@ -32,6 +33,7 @@ type Props = {
   recyclingKey: string
   spoiler?: boolean
   video: PostMedia
+  viewing?: SharedValue<string | null>
 }
 
 export function VideoPlayer({
@@ -42,6 +44,7 @@ export function VideoPlayer({
   recyclingKey,
   spoiler,
   video,
+  viewing,
 }: Props) {
   const t = useTranslations('component.posts.video')
   const a11y = useTranslations('a11y')
@@ -82,6 +85,7 @@ export function VideoPlayer({
     instance.muted = feedMuted
   })
 
+  const [inView, setInView] = useRecyclingState(false, [recyclingKey])
   const [loaded, setLoaded] = useRecyclingState(false, [recyclingKey])
   const [duration, setDuration] = useRecyclingState(0, [recyclingKey])
   const [muted, setMuted] = useRecyclingState(feedMuted, [recyclingKey])
@@ -96,7 +100,12 @@ export function VideoPlayer({
     setMuted(event.muted)
   })
 
-  const inView = useInView(recyclingKey)
+  useAnimatedReaction(
+    () => viewing?.get(),
+    (prepared) => {
+      scheduleOnRN(setInView, prepared === recyclingKey)
+    },
+  )
 
   useEffect(() => {
     if (!compact && inView && autoPlay) {
@@ -150,7 +159,7 @@ export function VideoPlayer({
           }
         }}
         willExitFullscreen={() => {
-          if (compact || !autoPlay) {
+          if (compact || !inView || !autoPlay) {
             player.pause()
           }
 
@@ -183,7 +192,7 @@ export function VideoPlayer({
           accessibilityLabel={a11y(muted ? 'unmute' : 'mute')}
           hitSlop={space[3]}
           onPress={() => {
-            setMuted((previous) => !previous)
+            player.muted = !player.muted
           }}
           style={styles.volume}
         >
