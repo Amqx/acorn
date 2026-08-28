@@ -163,8 +163,8 @@ export function PostList({
           )
         },
         viewabilityConfig: {
-          itemVisiblePercentThreshold: 60,
           minimumViewTime: 0,
+          viewAreaCoveragePercentThreshold: 60,
           waitForInteraction: false,
         },
       },
