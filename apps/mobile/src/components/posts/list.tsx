@@ -1,18 +1,14 @@
 import {
   FlashList,
-  type FlashListProps,
   type FlashListRef,
   type ListRenderItem,
 } from '@shopify/flash-list'
+import { type ViewabilityConfigCallbackPairs } from '@shopify/flash-list/dist/FlashListProps'
 import { useRouter, useScrollToTop } from 'expo-router'
 import { useHeaderHeight } from 'expo-router/react-navigation'
-import { type ReactElement, useCallback, useRef } from 'react'
-import {
-  type StyleProp,
-  View,
-  type ViewabilityConfig,
-  type ViewStyle,
-} from 'react-native'
+import { type ReactElement, useCallback, useMemo, useRef } from 'react'
+import { type StyleProp, View, type ViewStyle } from 'react-native'
+import { useSharedValue } from 'react-native-reanimated'
 import { StyleSheet } from 'react-native-unistyles'
 import { useTranslations } from 'use-intl'
 import { useShallow } from 'zustand/react/shallow'
@@ -23,6 +19,7 @@ import { PostCard } from '~/components/posts/card'
 import { useHistory } from '~/hooks/history'
 import { type ListProps } from '~/hooks/list'
 import { type PostsProps, usePosts } from '~/hooks/queries/posts/posts'
+import { isPost } from '~/lib/guards'
 import { usePreferences } from '~/stores/preferences'
 import { type Comment } from '~/types/comment'
 import { type Post } from '~/types/post'
@@ -31,11 +28,6 @@ import { CommentCard } from '../comments/card'
 import { Button } from '../common/button'
 import { Empty } from '../common/empty'
 import { Loading } from '../common/loading'
-
-const viewabilityConfig: ViewabilityConfig = {
-  minimumViewTime: usePreferences.getState().seenOnScrollDelay * 1000,
-  waitForInteraction: false,
-}
 
 type Item = Post | Comment
 
@@ -75,6 +67,8 @@ export function PostList({
       },
     }),
   )
+
+  const viewing = useSharedValue<string | null>(null)
 
   const { addPost } = useHistory()
 
@@ -126,34 +120,57 @@ export function PostList({
         return null
       }
 
-      return <PostCard post={item} />
+      return <PostCard post={item} viewing={viewing} />
     },
-    [router],
+    [router, viewing],
   )
 
-  const onViewableItemsChanged: FlashListProps<Item>['onViewableItemsChanged'] =
-    useCallback(
-      ({ changed }) => {
-        if (!seenOnScroll) {
-          return
-        }
+  const foo = useMemo<ViewabilityConfigCallbackPairs<Item>>(
+    () => [
+      {
+        onViewableItemsChanged({ changed }) {
+          if (!seenOnScroll) {
+            return
+          }
 
-        const items = changed.filter(
-          (item) =>
-            !item.isViewable &&
-            item.item &&
-            item.item.type !== 'reply' &&
-            item.item.type !== 'more',
-        )
+          const items = changed.filter(
+            (item) =>
+              !item.isViewable &&
+              item.item &&
+              item.item.type !== 'reply' &&
+              item.item.type !== 'more',
+          )
 
-        for (const item of items) {
-          addPost({
-            id: (item.item as Post).id,
-          })
-        }
+          for (const item of items) {
+            addPost({
+              id: (item.item as Post).id,
+            })
+          }
+        },
+        viewabilityConfig: {
+          minimumViewTime: usePreferences.getState().seenOnScrollDelay * 1000,
+          waitForInteraction: false,
+        },
       },
-      [addPost, seenOnScroll],
-    )
+      {
+        onViewableItemsChanged({ viewableItems }) {
+          const [viewable] = viewableItems.filter(
+            (item) => item.item.type === 'video',
+          )
+
+          viewing.set(
+            viewable && isPost(viewable.item) ? viewable.item.id : null,
+          )
+        },
+        viewabilityConfig: {
+          minimumViewTime: 0,
+          viewAreaCoveragePercentThreshold: 60,
+          waitForInteraction: false,
+        },
+      },
+    ],
+    [viewing, addPost, seenOnScroll],
+  )
 
   return (
     <FlashList
@@ -197,7 +214,6 @@ export function PostList({
           fetchNextPage()
         }
       }}
-      onViewableItemsChanged={onViewableItemsChanged}
       ref={list}
       refreshControl={
         <RefreshControl
@@ -209,7 +225,7 @@ export function PostList({
         />
       }
       renderItem={renderItem}
-      viewabilityConfig={viewabilityConfig}
+      viewabilityConfigCallbackPairs={foo}
     />
   )
 }

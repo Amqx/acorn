@@ -147,6 +147,8 @@ export function Themes({ onChange, value }: Props) {
             </View>
           </View>
         ))}
+
+        <Sheet.BottomInset />
       </Sheet.Root>
     </>
   )

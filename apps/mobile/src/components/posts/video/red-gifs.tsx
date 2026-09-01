@@ -1,33 +1,38 @@
 import { View } from 'react-native'
+import { type SharedValue } from 'react-native-reanimated'
 import { StyleSheet } from 'react-native-unistyles'
 
 import { Spinner } from '~/components/common/spinner'
+import { useFocused } from '~/hooks/focus'
 import { useRedGifs } from '~/hooks/red-gifs'
 import { type PostMedia } from '~/types/post'
 
+import { VideoPlaceholder } from './placeholder'
 import { VideoPlayer } from './player'
 
 type Props = {
   compact?: boolean
   crossPost?: boolean
-  inView: boolean
   large?: boolean
   nsfw?: boolean
-  recyclingKey?: string
+  recyclingKey: string
   spoiler?: boolean
   video: PostMedia
+  viewing?: SharedValue<string | null>
 }
 
 export function RedGifsVideo({
   compact = false,
   crossPost = false,
-  inView,
   large = false,
   nsfw,
   recyclingKey,
   spoiler,
   video,
+  viewing,
 }: Props) {
+  const { focused } = useFocused()
+
   styles.useVariants({
     compact,
     crossPost,
@@ -36,12 +41,25 @@ export function RedGifsVideo({
 
   const { gif } = useRedGifs(video.url)
 
+  if (!focused) {
+    return (
+      <VideoPlaceholder
+        compact={compact}
+        crossPost={crossPost}
+        large={large}
+        nsfw={nsfw}
+        recyclingKey={recyclingKey}
+        spoiler={spoiler}
+        video={video}
+      />
+    )
+  }
+
   if (gif) {
     return (
       <VideoPlayer
         compact={compact}
         crossPost={crossPost}
-        inView={inView}
         large={large}
         nsfw={nsfw}
         recyclingKey={recyclingKey}
@@ -50,6 +68,7 @@ export function RedGifsVideo({
           ...video,
           url: gif.url,
         }}
+        viewing={viewing}
       />
     )
   }

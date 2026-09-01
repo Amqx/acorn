@@ -20,7 +20,7 @@ type Props = {
   large?: boolean
   onLongPress?: () => void
   post: Post
-  recyclingKey?: string
+  recyclingKey: string
 }
 
 export function CrossPostCard({

@@ -1,8 +1,12 @@
+import { type SharedValue } from 'react-native-reanimated'
+
 import { MediaMenu } from '~/components/common/media-menu'
+import { useFocused } from '~/hooks/focus'
 // import { useFocused } from '~/hooks/focus'
 import { type PostMedia } from '~/types/post'
 
 import { PostLinkCard } from '../link'
+import { VideoPlaceholder } from './placeholder'
 // import { VideoPlaceholder } from './placeholder'
 import { VideoPlayer } from './player'
 import { RedGifsVideo } from './red-gifs'
@@ -10,49 +14,47 @@ import { RedGifsVideo } from './red-gifs'
 type Props = {
   compact?: boolean
   crossPost?: boolean
-  inView: boolean
   large?: boolean
   nsfw?: boolean
-  recyclingKey?: string
+  recyclingKey: string
   spoiler?: boolean
   thumbnail?: string
   video: PostMedia
+  viewing?: SharedValue<string | null>
 }
 
 export function PostVideoCard({
   compact,
   crossPost,
-  inView,
   large,
   nsfw,
   recyclingKey,
   spoiler,
-  // thumbnail,
   video,
+  viewing,
 }: Props) {
-  // const { focused } = useFocused()
-
-  // if (!focused) {
-  //   return (
-  //     <VideoPlaceholder
-  //       compact={compact}
-  //       crossPost={crossPost}
-  //       large={large}
-  //       nsfw={nsfw}
-  //       recyclingKey={recyclingKey}
-  //       spoiler={spoiler}
-  //       thumbnail={thumbnail}
-  //       video={video}
-  //     />
-  //   )
-  // }
+  const { focused } = useFocused()
 
   if (video.provider === 'red-gifs') {
     return (
       <RedGifsVideo
         compact={compact}
         crossPost={crossPost}
-        inView={inView}
+        large={large}
+        nsfw={nsfw}
+        recyclingKey={recyclingKey}
+        spoiler={spoiler}
+        video={video}
+        viewing={viewing}
+      />
+    )
+  }
+
+  if (!focused) {
+    return (
+      <VideoPlaceholder
+        compact={compact}
+        crossPost={crossPost}
         large={large}
         nsfw={nsfw}
         recyclingKey={recyclingKey}
@@ -67,12 +69,12 @@ export function PostVideoCard({
       <VideoPlayer
         compact={compact}
         crossPost={crossPost}
-        inView={inView}
         large={large}
         nsfw={nsfw}
         recyclingKey={recyclingKey}
         spoiler={spoiler}
         video={video}
+        viewing={viewing}
       />
     )
   }
