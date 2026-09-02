@@ -16,12 +16,21 @@ jobs:
         with:
           node-version: 24
 
+      - name: Cache Bun packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-${{ runner.arch }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: ${{ runner.os }}-${{ runner.arch }}-bun-
+
       - name: Cache CocoaPods
         uses: actions/cache@v4
         with:
-          path: ~/Library/Caches/CocoaPods
-          key: ${{ runner.os }}-pods-${{ hashFiles('apps/mobile/package.json') }}
-          restore-keys: ${{ runner.os }}-pods-
+          path: |
+            ~/Library/Caches/CocoaPods
+            ~/.cocoapods/repos
+          key: ${{ runner.os }}-${{ runner.arch }}-pods-${{ hashFiles('bun.lock', 'apps/mobile/app.config.ts') }}
+          restore-keys: ${{ runner.os }}-${{ runner.arch }}-pods-
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
