@@ -1,10 +1,11 @@
 # Changelog
 
-## Upcoming
+## Build 87
 
 - added: mute feed option
 - added: new gallery library
 - added: new video library
+- fixed: bold font option for San Francisco
 
 ## Build 86
 

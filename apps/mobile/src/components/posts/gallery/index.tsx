@@ -109,12 +109,12 @@ export function PostGalleryCard({
 
 const styles = StyleSheet.create((theme, runtime) => ({
   image: {
+    borderCurve: 'continuous',
+    borderRadius: theme.radius[4],
     height: '100%',
     width: '100%',
   },
   main: {
-    borderCurve: 'continuous',
-    borderRadius: theme.radius[4],
     compoundVariants: [
       {
         compact: false,

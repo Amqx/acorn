@@ -1,15 +1,15 @@
 import { type ConfigContext, type ExpoConfig } from 'expo/config'
 import { withBuildProperties } from 'expo-build-properties'
-import expoFont from 'expo-font/plugin'
-import expoImagePicker from 'expo-image-picker/plugin'
-import expoLocalization from 'expo-localization/plugin'
-import expoMediaLibrary from 'expo-media-library/plugin'
-import expoRouter from 'expo-router/plugin'
-import expoScreenOrientation from 'expo-screen-orientation/plugin'
-import expoSecureStore from 'expo-secure-store/plugin'
-import expoSplashScreen from 'expo-splash-screen/plugin'
-import expoSqlite from 'expo-sqlite/plugin'
-import expoWebBrowser from 'expo-web-browser/plugin'
+import font from 'expo-font/plugin'
+import imagePicker from 'expo-image-picker/plugin'
+import localization from 'expo-localization/plugin'
+import mediaLibrary from 'expo-media-library/plugin'
+import router from 'expo-router/plugin'
+import screenOrientation from 'expo-screen-orientation/plugin'
+import secureStore from 'expo-secure-store/plugin'
+import splashScreen from 'expo-splash-screen/plugin'
+import sqlite from 'expo-sqlite/plugin'
+import webBrowser from 'expo-web-browser/plugin'
 
 export default function getConfig(context: ConfigContext): ExpoConfig {
   const name = 'Acorn'
@@ -20,12 +20,12 @@ export default function getConfig(context: ConfigContext): ExpoConfig {
     'expo-iap',
     'react-native-bottom-tabs',
     'react-native-video',
-    expoRouter(),
-    expoLocalization(),
-    expoSecureStore(),
-    expoSqlite(),
-    expoWebBrowser(),
-    expoSplashScreen({
+    router(),
+    localization(),
+    secureStore(),
+    sqlite(),
+    webBrowser(),
+    splashScreen({
       backgroundColor: '#fbfdfc',
       dark: {
         backgroundColor: '#101211',
@@ -33,7 +33,7 @@ export default function getConfig(context: ConfigContext): ExpoConfig {
       image: './assets/icons/splash.png',
       imageWidth: 200,
     }),
-    expoFont({
+    font({
       fonts: [
         './assets/fonts/apercu-italic.ttf',
         './assets/fonts/apercu-upright.ttf',
@@ -49,14 +49,14 @@ export default function getConfig(context: ConfigContext): ExpoConfig {
         './assets/fonts/redacted.ttf',
       ],
     }),
-    expoMediaLibrary({
+    mediaLibrary({
       photosPermission: `Allow ${name} to access your photo library.`,
       savePhotosPermission: `Allow ${name} to save photos to your library.`,
     }),
-    expoImagePicker({
+    imagePicker({
       photosPermission: `Allow ${name} to access your photo library`,
     }),
-    expoScreenOrientation({
+    screenOrientation({
       initialOrientation: 'PORTRAIT_UP',
     }),
     [
@@ -99,7 +99,7 @@ export default function getConfig(context: ConfigContext): ExpoConfig {
     },
     ios: {
       appleTeamId: process.env.APPLE_TEAM_ID,
-      buildNumber: '86',
+      buildNumber: '87',
       bundleIdentifier: 'blue.acorn',
       config: {
         usesNonExemptEncryption: false,

@@ -122,11 +122,13 @@ export default function Screen() {
           }}
           options={[
             {
+              hideRight: true,
               label: t('browsing.refreshInterval.instant'),
               right: <SFSymbol name="0.circle.fill" />,
               value: 0,
             },
             {
+              hideRight: true,
               label: f.number(5, {
                 style: 'unit',
                 unit: 'minute',
@@ -135,6 +137,7 @@ export default function Screen() {
               value: 5,
             },
             {
+              hideRight: true,
               label: f.number(10, {
                 style: 'unit',
                 unit: 'minute',
@@ -143,6 +146,7 @@ export default function Screen() {
               value: 10,
             },
             {
+              hideRight: true,
               label: f.number(15, {
                 style: 'unit',
                 unit: 'minute',
@@ -151,6 +155,7 @@ export default function Screen() {
               value: 15,
             },
             {
+              hideRight: true,
               label: f.number(30, {
                 style: 'unit',
                 unit: 'minute',
@@ -159,6 +164,7 @@ export default function Screen() {
               value: 30,
             },
             {
+              hideRight: true,
               label: t('browsing.refreshInterval.never'),
               right: <SFSymbol name="infinity.circle.fill" />,
               value: Number.POSITIVE_INFINITY,
@@ -337,6 +343,7 @@ export default function Screen() {
             update(payload)
           }}
           options={FloatingButtonSide.map((item) => ({
+            hideRight: true,
             label: t(`side.${item}`),
             right: (
               <Icon
@@ -371,6 +378,7 @@ export default function Screen() {
             update(payload)
           }}
           options={FloatingButtonSide.map((item) => ({
+            hideRight: true,
             label: t(`side.${item}`),
             right: (
               <Icon
@@ -439,11 +447,13 @@ export default function Screen() {
           }}
           options={[
             {
+              hideRight: true,
               label: t('browsing.refreshInterval.instant'),
               right: <SFSymbol name="0.circle.fill" />,
               value: 0,
             },
             {
+              hideRight: true,
               label: f.number(1, {
                 style: 'unit',
                 unit: 'second',
@@ -452,6 +462,7 @@ export default function Screen() {
               value: 1,
             },
             {
+              hideRight: true,
               label: f.number(2, {
                 style: 'unit',
                 unit: 'second',
@@ -460,6 +471,7 @@ export default function Screen() {
               value: 2,
             },
             {
+              hideRight: true,
               label: f.number(3, {
                 style: 'unit',
                 unit: 'second',
@@ -468,6 +480,7 @@ export default function Screen() {
               value: 3,
             },
             {
+              hideRight: true,
               label: f.number(5, {
                 style: 'unit',
                 unit: 'second',
@@ -476,6 +489,7 @@ export default function Screen() {
               value: 5,
             },
             {
+              hideRight: true,
               label: f.number(10, {
                 style: 'unit',
                 unit: 'second',
