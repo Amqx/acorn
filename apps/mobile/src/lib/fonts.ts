@@ -4,7 +4,7 @@ export const fonts = {
   fold: 'Fold Grotesque Pro',
   inter: 'Inter Variable',
   mono: 'SF Mono',
-  system: 'System',
+  system: undefined as unknown as string,
 }
 
 export type Font = Exclude<keyof typeof fonts, 'mono'>
