@@ -1,4 +1,5 @@
-import { Text as Component, type TextProps } from 'react-native'
+import { createElement } from 'react'
+import { type TextProps } from 'react-native'
 import { StyleSheet } from 'react-native-unistyles'
 import { useShallow } from 'zustand/react/shallow'
 
@@ -53,14 +54,14 @@ export function Text({
     weight: fontBold ? 'bold' : weight,
   })
 
-  return (
-    <Component
-      {...stripProps(props)}
-      allowFontScaling={systemScaling}
-      style={[styles.main(props, systemScaling ? 1 : fontScaling), style]}
-    >
-      {children}
-    </Component>
+  return createElement(
+    'RCTText',
+    {
+      ...stripProps(props),
+      allowFontScaling: systemScaling,
+      style: [styles.main(props, systemScaling ? 1 : fontScaling), style],
+    },
+    children,
   )
 }
 
