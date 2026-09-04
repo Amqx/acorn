@@ -30,7 +30,7 @@ build() {
 }
 
 if command -v xcbeautify > /dev/null 2>&1; then 
-  build | xcbeautify
+  build | xcbeautify --renderer github-actions
 else 
   build
 fi
