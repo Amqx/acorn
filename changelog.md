@@ -1,5 +1,18 @@
 # Changelog
 
+## Upcoming
+
+- added: show the comment you're replying to
+- changed: center tall images
+
+## Build 88
+
+- added: new video library
+- added: transparent header for post screen
+- changed: image gallery design
+- fixed: custom feeds with spaces
+- fixed: music pausing when opening Acorn
+
 ## Build 87
 
 - added: mute feed option

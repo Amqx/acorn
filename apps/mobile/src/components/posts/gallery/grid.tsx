@@ -4,7 +4,8 @@ import { useMemo, useRef, useState } from 'react'
 import { View } from 'react-native'
 import { FlatList } from 'react-native-gesture-handler'
 import { Gallery } from 'react-native-jet-gallery'
-import { StyleSheet, useUnistyles } from 'react-native-unistyles'
+import { useSafeAreaFrame } from 'react-native-safe-area-context'
+import { StyleSheet } from 'react-native-unistyles'
 import { useTranslations } from 'use-intl'
 import { useShallow } from 'zustand/react/shallow'
 
@@ -32,9 +33,9 @@ export function ImageGrid({
   recyclingKey,
   spoiler = false,
 }: Props) {
-  const t = useTranslations('component.posts.gallery')
+  const frame = useSafeAreaFrame()
 
-  const { rt } = useUnistyles()
+  const t = useTranslations('component.posts.gallery')
 
   const list = useRef<FlatList<PostMedia>>(null)
 
@@ -54,13 +55,13 @@ export function ImageGrid({
 
   const { actions } = useImageActions()
 
-  const [width, setWidth] = useState(rt.screen.width)
+  const [width, setWidth] = useState(frame.width)
 
   const data = useMemo(() => {
     const ratios = images.map((image) => image.width / image.height)
 
     const height = Math.min(
-      rt.screen.height * 0.4,
+      frame.height * 0.5,
       Math.round(width / Math.max(...ratios)),
     )
 
@@ -80,51 +81,13 @@ export function ImageGrid({
       offsets,
       sizes,
     }
-  }, [images, rt.screen.height, width])
-
-  if (images.length === 1) {
-    const image = images[0]!
-
-    return (
-      <Gallery actions={actions} images={[image]} onDismiss={onDismiss}>
-        <Gallery.Image
-          index={0}
-          onLongPress={(event) => {
-            MediaMenu.call({
-              type: 'image',
-              url: event.url,
-            })
-          }}
-          style={styles.one(image.width / image.height)}
-        >
-          <Image
-            accessibilityIgnoresInvertColors
-            recyclingKey={recyclingKey}
-            source={image.url}
-            style={styles.image}
-          />
-        </Gallery.Image>
-
-        {(nsfw && blurNsfw) || (spoiler && blurSpoiler) ? (
-          <GalleryBlur label={t(spoiler ? 'spoiler' : 'nsfw')} />
-        ) : null}
-
-        {image.type === 'gif' ? (
-          <View pointerEvents="none" style={[styles.label, styles.gif]}>
-            <Text contrast size="1" weight="medium">
-              {t('gif')}
-            </Text>
-          </View>
-        ) : null}
-      </Gallery>
-    )
-  }
+  }, [images, frame.height, width])
 
   return (
     <>
       <Gallery actions={actions} images={images} onDismiss={onDismiss}>
         <FlatList
-          contentContainerStyle={styles.carousel(data.height)}
+          contentContainerStyle={styles.carousel(data.height, images.length)}
           data={images}
           decelerationRate="fast"
           horizontal
@@ -143,12 +106,13 @@ export function ImageGrid({
                     url: event.url,
                   })
                 }}
+                style={styles.image}
               >
                 <Image
                   accessibilityIgnoresInvertColors
                   recyclingKey={recyclingKey}
                   source={item.url}
-                  style={[styles.slide, data.sizes[index]]}
+                  style={data.sizes[index]}
                 />
               </Gallery.Image>
 
@@ -165,26 +129,31 @@ export function ImageGrid({
               ) : null}
             </>
           )}
+          scrollEnabled={images.length > 1}
           showsHorizontalScrollIndicator={false}
           snapToOffsets={data.offsets}
         />
       </Gallery>
 
-      <View pointerEvents="none" style={[styles.label, styles.count]}>
-        <Text contrast size="1" weight="medium">
-          {t('items', {
-            count: images.length,
-          })}
-        </Text>
-      </View>
+      {images.length > 1 ? (
+        <View pointerEvents="none" style={[styles.label, styles.count]}>
+          <Text contrast size="1" weight="medium">
+            {t('items', {
+              count: images.length,
+            })}
+          </Text>
+        </View>
+      ) : null}
     </>
   )
 }
 
 const styles = StyleSheet.create((theme) => ({
-  carousel: (height: number) => ({
+  carousel: (height: number, count: number) => ({
+    flexGrow: 1,
     gap: theme.space[3],
     height,
+    justifyContent: count === 1 ? 'center' : undefined,
   }),
   count: {
     right: theme.space[2],
@@ -195,8 +164,7 @@ const styles = StyleSheet.create((theme) => ({
   image: {
     borderCurve: 'continuous',
     borderRadius: theme.radius[4],
-    height: '100%',
-    width: '100%',
+    overflow: 'hidden',
   },
   label: {
     backgroundColor: theme.colors.black.accentAlpha,
@@ -206,12 +174,5 @@ const styles = StyleSheet.create((theme) => ({
     paddingHorizontal: theme.space[1],
     paddingVertical: theme.space[1] / 2,
     position: 'absolute',
-  },
-  one: (aspectRatio: number) => ({
-    aspectRatio,
-  }),
-  slide: {
-    borderCurve: 'continuous',
-    borderRadius: theme.radius[4],
   },
 }))

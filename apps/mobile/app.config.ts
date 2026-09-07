@@ -19,7 +19,6 @@ export default function getConfig(context: ConfigContext): ExpoConfig {
     '@bacons/apple-targets',
     'expo-iap',
     'react-native-bottom-tabs',
-    'react-native-video',
     router(),
     localization(),
     secureStore(),
@@ -99,7 +98,7 @@ export default function getConfig(context: ConfigContext): ExpoConfig {
     },
     ios: {
       appleTeamId: process.env.APPLE_TEAM_ID,
-      buildNumber: '87',
+      buildNumber: '88',
       bundleIdentifier: 'blue.acorn',
       config: {
         usesNonExemptEncryption: false,
