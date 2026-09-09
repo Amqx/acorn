@@ -143,11 +143,6 @@
         "week": "This week",
         "year": "This year"
       },
-      "paywall": {
-        "card": {
-          "title": "Subscribe to Acorn Pro to unlock these features"
-        }
-      },
       "search": {
         "filter": "Filter",
         "search": "Search"
@@ -455,11 +450,6 @@
       "signIn": {
         "error": "Something went wrong"
       }
-    },
-    "purchases": {
-      "subscribe": {
-        "error": "Something went wrong"
-      }
     }
   },
   "screen": {
@@ -469,35 +459,6 @@
         "description": "Reddit for mobile",
         "signIn": "Sign in with Reddit",
         "title": "Acorn"
-      },
-      "subscribe": {
-        "feature": {
-          "1": "Unlimited accounts & usage",
-          "2": "All features unlocked",
-          "3": "Beautifully designed",
-          "4": "No ads, ever",
-          "5": "Privacy focused",
-          "6": "Actively developed",
-          "7": "Open source"
-        },
-        "footer": {
-          "redeem": "Redeem",
-          "restore": "Restore",
-          "subscribe": "Subscribe",
-          "trial": "Start free trial"
-        },
-        "header": {
-          "description": "Hello. You need to subscribe to use Acorn to use Reddit."
-        },
-        "price": {
-          "description": "per month"
-        },
-        "trial": {
-          "day": "{count, plural, =0 {None} =1 {# day} other {# days}} free trial",
-          "month": "{count, plural, =0 {None} =1 {# month} other {# months}} free trial",
-          "week": "{count, plural, =0 {None} =1 {# week} other {# weeks}} free trial",
-          "year": "{count, plural, =0 {None} =1 {# year} other {# years}} free trial"
-        }
       }
     },
     "communities": {

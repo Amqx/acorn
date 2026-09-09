@@ -305,14 +305,6 @@ function StackLayout({ children }: PropsWithChildren) {
           presentation: iPad ? 'formSheet' : 'modal',
         })}
       />
-
-      <Stack.Screen
-        name="subscribe"
-        options={{
-          headerShown: false,
-          presentation: iPad ? 'formSheet' : 'modal',
-        }}
-      />
     </Stack>
   )
 }

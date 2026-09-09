@@ -17,7 +17,6 @@ export default function getConfig(context: ConfigContext): ExpoConfig {
 
   const plugins: ExpoConfig['plugins'] = [
     '@bacons/apple-targets',
-    'expo-iap',
     'react-native-bottom-tabs',
     router(),
     localization(),
@@ -70,16 +69,6 @@ export default function getConfig(context: ConfigContext): ExpoConfig {
       },
     ],
   ]
-
-  if (process.env.SENTRY_AUTH_TOKEN) {
-    plugins.push([
-      '@sentry/react-native/expo',
-      {
-        organization: process.env.SENTRY_ORG,
-        project: process.env.SENTRY_PROJECT,
-      },
-    ])
-  }
 
   const config = {
     ...context.config,

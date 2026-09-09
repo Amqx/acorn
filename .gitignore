@@ -44,10 +44,6 @@ yarn-error.log*
 #
 tsconfig.tsbuildinfo
 
-# sentry
-#
-.env.sentry-build-plugin
-
 # expo
 #
 apps/mobile/ios

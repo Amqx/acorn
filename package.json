@@ -6,15 +6,15 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "turbo build",
+    "build": "TURBO_TELEMETRY_DISABLED=1 turbo build",
     "clean": "rimraf --glob '**/.next' '**/.expo' '**/.turbo'",
-    "dev": "bun clean; watchman shutdown-server; turbo dev",
+    "dev": "bun clean; watchman shutdown-server; TURBO_TELEMETRY_DISABLED=1 turbo dev",
     "knip": "knip",
     "lint": "bunx ultracite fix",
     "nuke": "bun clean '**/node_modules' bun.lock",
     "prepare": "husky",
     "tunnel": "ngrok http --url=acorn-blue.ngrok.app 3000",
-    "typecheck": "turbo typecheck"
+    "typecheck": "TURBO_TELEMETRY_DISABLED=1 turbo typecheck"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,json,jsonc,css,scss,md,mdx}": [

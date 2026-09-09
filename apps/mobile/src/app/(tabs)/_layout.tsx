@@ -13,7 +13,6 @@ import { Tabs } from '~/components/navigation/tabs'
 import { useUnread } from '~/hooks/queries/user/unread'
 import { iPad } from '~/lib/common'
 import { mitter } from '~/lib/mitt'
-import { Sentry } from '~/lib/sentry'
 import { useAuth } from '~/stores/auth'
 import { usePreferences } from '~/stores/preferences'
 
@@ -36,14 +35,8 @@ export default function Layout() {
 
   useEffect(() => {
     if (accountId) {
-      Sentry.setUser({
-        id: accountId,
-      })
-
       return
     }
-
-    Sentry.setUser(null)
 
     router.navigate('/sign-in')
   }, [accountId, router])

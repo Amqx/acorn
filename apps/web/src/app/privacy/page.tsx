@@ -33,7 +33,7 @@ export default function Page() {
             key: 'website',
           },
           {
-            items: ['app.1', 'app.2', 'app.3'],
+            items: ['app.1', 'app.2'],
             key: 'app',
           },
         ] as const
@@ -44,18 +44,7 @@ export default function Page() {
           </h2>
 
           {section.items.map((item) => (
-            <p key={item}>
-              {t.rich(item, {
-                sentryLink: (text) => (
-                  <Link
-                    className="text-accent-11 outline-none"
-                    href="https://sentry.io/privacy/"
-                  >
-                    {text}
-                  </Link>
-                ),
-              })}
-            </p>
+            <p key={item}>{t(item)}</p>
           ))}
         </section>
       ))}

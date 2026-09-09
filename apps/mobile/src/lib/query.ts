@@ -4,7 +4,6 @@ import { type PersistQueryClientOptions } from '@tanstack/react-query-persist-cl
 import storage from 'expo-sqlite/kv-store'
 import { parse, stringify } from 'superjson'
 
-import { Sentry } from '~/lib/sentry'
 import { usePreferences } from '~/stores/preferences'
 
 const CACHE_KEY = 'cache-storage-8'
@@ -17,8 +16,6 @@ export const queryClient = new QueryClient({
           console.log(error)
         }
 
-        Sentry.captureException(error)
-
         return false
       },
     },
@@ -30,8 +27,6 @@ export const queryClient = new QueryClient({
         if (__DEV__) {
           console.log(error)
         }
-
-        Sentry.captureException(error)
 
         return false
       },

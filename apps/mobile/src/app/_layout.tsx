@@ -10,7 +10,6 @@ import { Providers } from '~/components/common/providers'
 import { Drawer } from '~/components/navigation/drawer'
 import { db } from '~/db'
 import migrations from '~/drizzle/migrations'
-import { Sentry } from '~/lib/sentry'
 import { setAdaptiveTheme } from '~/lib/theme'
 import { usePreferences } from '~/stores/preferences'
 
@@ -32,8 +31,8 @@ function Acorn() {
   }, [success])
 
   useEffect(() => {
-    if (error) {
-      Sentry.captureException(error)
+    if (error && __DEV__) {
+      console.log(error)
     }
   }, [error])
 
@@ -62,4 +61,4 @@ function Acorn() {
   )
 }
 
-export default Sentry.wrap(Acorn)
+export default Acorn

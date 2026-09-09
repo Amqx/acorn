@@ -6,6 +6,7 @@
 - added: show the comment you're replying to
 - added: unlock orientation for image gallery
 - fixed: video fullscreen enter / exit jitter
+- removed: paywall
 - reverted: image gallery design
 
 ## Build 88

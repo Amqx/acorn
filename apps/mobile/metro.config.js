@@ -1,6 +1,6 @@
-import { getSentryExpoConfig } from '@sentry/react-native/metro.js'
+import { getDefaultConfig } from 'expo/metro-config.js'
 
-const config = getSentryExpoConfig(import.meta.dirname)
+const config = getDefaultConfig(import.meta.dirname)
 
 config.resolver.sourceExts.push('sql')
 
