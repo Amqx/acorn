@@ -2,6 +2,7 @@ name: Build/ release IPA
 
 on:
   workflow_dispatch:
+  push:
 
 jobs:
   build:

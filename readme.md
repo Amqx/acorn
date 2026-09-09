@@ -2,6 +2,8 @@
 
 Reddit for mobile
 
+[Upstream](https://github.com/alizahid/acorn)
+
 ## What's Different?
 
 - Removed Sentry's tracking stuff entirely
