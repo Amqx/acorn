@@ -2,8 +2,11 @@
 
 ## Upcoming
 
+- added: clear video cache
 - added: show the comment you're replying to
-- changed: center tall images
+- added: unlock orientation for image gallery
+- fixed: video fullscreen enter / exit jitter
+- reverted: image gallery design
 
 ## Build 88
 

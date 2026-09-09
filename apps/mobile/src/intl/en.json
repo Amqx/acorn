@@ -143,6 +143,11 @@
         "week": "This week",
         "year": "This year"
       },
+      "paywall": {
+        "card": {
+          "title": "Subscribe to Acorn Pro to unlock these features"
+        }
+      },
       "search": {
         "filter": "Filter",
         "search": "Search"
@@ -468,14 +473,16 @@
       "subscribe": {
         "feature": {
           "1": "Unlimited accounts & usage",
-          "2": "Beautifully designed",
-          "3": "No ads, ever",
-          "4": "Privacy focused",
-          "5": "Actively developed",
-          "6": "Open source"
+          "2": "All features unlocked",
+          "3": "Beautifully designed",
+          "4": "No ads, ever",
+          "5": "Privacy focused",
+          "6": "Actively developed",
+          "7": "Open source"
         },
         "footer": {
-          "restore": "Restore purchases",
+          "redeem": "Redeem",
+          "restore": "Restore",
           "subscribe": "Subscribe",
           "trial": "Start free trial"
         },
@@ -620,7 +627,8 @@
         },
         "media": {
           "image": "Clear image cache",
-          "title": "Media"
+          "title": "Media",
+          "video": "Clear video cache"
         },
         "title": "Cache"
       },
