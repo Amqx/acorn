@@ -47,4 +47,6 @@ jobs:
       - name: Upload GH artifact
         uses: actions/upload-artifact@v7
         with:
+          name: unsigned-ipa
           path: apps/mobile/build/Acorn-unsigned.ipa
+          if-no-files-found: error

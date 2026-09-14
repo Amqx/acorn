@@ -1,0 +1,47 @@
+name: Update AltStore Source
+
+on:
+  workflow_run:
+    workflows: [Build/ release IPA]
+    branches: [main]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: altstore-source
+  cancel-in-progress: false
+
+jobs:
+  update-source:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout publisher
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Publish IPA and generate source
+        id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 .github/workflows/supporting/update_altstore_json.py
+
+      - name: Publish source
+        if: steps.source.outputs.publish == 'true'
+        uses: JamesIves/github-pages-deploy-action@15de0f09300eea763baee31dff6c6184995c5f6a # v4.7.2
+        with:
+          branch: altstore
+          folder: .github/workflows/supporting/altstore
+          git-config-name: github-actions[bot]
+          git-config-email: 41898282+github-actions[bot]@users.noreply.github.com
+          commit-message: Update AltStore source
+          single-commit: true
