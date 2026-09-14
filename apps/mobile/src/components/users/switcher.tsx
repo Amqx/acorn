@@ -5,7 +5,7 @@ import { StyleSheet } from 'react-native-unistyles'
 import { useTranslations } from 'use-intl'
 import { useShallow } from 'zustand/react/shallow'
 
-import { glass, iOS26 } from '~/lib/common'
+import { glass } from '~/lib/common'
 import { mitter } from '~/lib/mitt'
 import { useAuth } from '~/stores/auth'
 
@@ -98,7 +98,7 @@ export function AccountSwitcher() {
         {t('description')}
       </Text>
 
-      {iOS26 ? null : <Sheet.BottomInset />}
+      <Sheet.BottomInset />
     </Sheet.Root>
   )
 }

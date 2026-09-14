@@ -41,9 +41,12 @@ export type PreferencesPayload = {
   fontSizeCommentBody: TypographyToken
   fontSizePostBody: TypographyToken
   fontSizeTitle: TypographyToken
+  gallerySnap: boolean
   hapticsLoud: boolean
+  hideCommunityName: boolean
   hidePostActions: boolean
   hideSeen: boolean
+  hideUserName: boolean
   infiniteScrolling: boolean
   intervalCommunityPosts: TopInterval
   intervalFeedPosts: TopInterval
@@ -109,9 +112,12 @@ export const usePreferences = create<State>()(
       fontSizeCommentBody: '2',
       fontSizePostBody: '3',
       fontSizeTitle: '3',
+      gallerySnap: true,
       hapticsLoud: false,
+      hideCommunityName: false,
       hidePostActions: false,
       hideSeen: false,
+      hideUserName: false,
       infiniteScrolling: true,
       intervalCommunityPosts: 'hour',
       intervalFeedPosts: 'hour',

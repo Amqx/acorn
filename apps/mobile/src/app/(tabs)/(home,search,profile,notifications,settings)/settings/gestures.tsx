@@ -156,7 +156,7 @@ export default function Screen() {
         <Menu.Label>{t('menu.posts')}</Menu.Label>
 
         <Menu.Switch
-          icon={<Icon name="hand-swipe-left" />}
+          icon={<Icon name="hand-swipe-right" />}
           label={t('menu.left')}
           onChange={(next) => {
             update({
@@ -193,7 +193,7 @@ export default function Screen() {
         ) : null}
 
         <Menu.Switch
-          icon={<Icon name="hand-swipe-right" />}
+          icon={<Icon name="hand-swipe-left" />}
           label={t('menu.right')}
           onChange={(next) => {
             update({
@@ -234,7 +234,7 @@ export default function Screen() {
         <Menu.Label>{t('menu.comments')}</Menu.Label>
 
         <Menu.Switch
-          icon={<Icon name="hand-swipe-left" />}
+          icon={<Icon name="hand-swipe-right" />}
           label={t('menu.left')}
           onChange={(next) => {
             update({
@@ -271,7 +271,7 @@ export default function Screen() {
         ) : null}
 
         <Menu.Switch
-          icon={<Icon name="hand-swipe-right" />}
+          icon={<Icon name="hand-swipe-left" />}
           label={t('menu.right')}
           onChange={(next) => {
             update({

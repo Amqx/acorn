@@ -31,9 +31,12 @@ export default function Screen() {
     feedbackHaptics,
     feedbackSounds,
     feedMuted,
+    gallerySnap,
     hapticsLoud,
+    hideCommunityName,
     hidePostActions,
     hideSeen,
+    hideUserName,
     infiniteScrolling,
     linkBrowser,
     minimizeTabBar,
@@ -68,9 +71,12 @@ export default function Screen() {
       feedbackHaptics: state.feedbackHaptics,
       feedbackSounds: state.feedbackSounds,
       feedMuted: state.feedMuted,
+      gallerySnap: state.gallerySnap,
       hapticsLoud: state.hapticsLoud,
+      hideCommunityName: state.hideCommunityName,
       hidePostActions: state.hidePostActions,
       hideSeen: state.hideSeen,
+      hideUserName: state.hideUserName,
       infiniteScrolling: state.infiniteScrolling,
       linkBrowser: state.linkBrowser,
       minimizeTabBar: state.minimizeTabBar,
@@ -256,6 +262,30 @@ export default function Screen() {
             })
           }}
           value={communityOnTop}
+        />
+
+        <Menu.Switch
+          description={t('posts.hideCommunityName.description')}
+          icon={<Icon name="users-four" />}
+          label={t('posts.hideCommunityName.label')}
+          onChange={(next) => {
+            update({
+              hideCommunityName: next,
+            })
+          }}
+          value={hideCommunityName}
+        />
+
+        <Menu.Switch
+          description={t('posts.hideUserName.description')}
+          icon={<Icon name="user" />}
+          label={t('posts.hideUserName.label')}
+          onChange={(next) => {
+            update({
+              hideUserName: next,
+            })
+          }}
+          value={hideUserName}
         />
 
         <Menu.Switch
@@ -527,6 +557,17 @@ export default function Screen() {
         <Menu.Separator />
 
         <Menu.Label>{t('media.title')}</Menu.Label>
+
+        <Menu.Switch
+          icon={<Icon name="square-split-horizontal" />}
+          label={t('media.gallerySnap')}
+          onChange={(next) => {
+            update({
+              gallerySnap: next,
+            })
+          }}
+          value={gallerySnap}
+        />
 
         <Menu.Switch
           icon={<Icon name="play" />}

@@ -1,34 +1,55 @@
 import { Image } from 'expo-image'
 import { useRouter } from 'expo-router'
+import { type ReactNode } from 'react'
+import { PlatformColor } from 'react-native'
 import { StyleSheet } from 'react-native-unistyles'
 import { useTranslations } from 'use-intl'
 
 import { removePrefix } from '~/lib/reddit'
-import { type Post } from '~/types/post'
 
 import { Pressable } from '../common/pressable'
 import { Text } from '../common/text'
 import { GlassView } from '../native/glass-view'
 
 type Props = {
-  post: Post
+  disabled?: boolean
+  image?: ReactNode
+  name: string
+  type?: 'community' | 'feed' | 'user'
 }
 
-export function CommunityHeader({ post }: Props) {
+export function CommunityHeader({
+  disabled = false,
+  image,
+  name,
+  type = 'community',
+}: Props) {
   const router = useRouter()
 
   const a11y = useTranslations('a11y')
 
   return (
-    <GlassView isInteractive style={styles.main}>
+    <GlassView isInteractive={!disabled} style={styles.main}>
       <Pressable
         accessibilityHint={a11y('viewCommunity')}
-        accessibilityLabel={post.community.name}
+        accessibilityLabel={name}
+        disabled={disabled}
         onPress={() => {
-          if (post.community.name.startsWith('u/')) {
+          if (type === 'feed') {
             router.navigate({
               params: {
-                name: removePrefix(post.community.name),
+                feed: removePrefix(name),
+              },
+              pathname: '/',
+            })
+
+            return
+          }
+
+          if (type === 'user' || name.startsWith('u/')) {
+            router.navigate({
+              params: {
+                name: removePrefix(name),
               },
               pathname: '/users/[name]',
             })
@@ -38,29 +59,32 @@ export function CommunityHeader({ post }: Props) {
 
           router.navigate({
             params: {
-              name: removePrefix(post.community.name),
+              name: removePrefix(name),
             },
             pathname: '/communities/[name]',
           })
         }}
         style={styles.content}
       >
-        {post.community.image ? (
-          <Image source={post.community.image} style={styles.image} />
-        ) : null}
+        {typeof image === 'string' ? (
+          <Image source={image} style={styles.image} />
+        ) : (
+          image
+        )}
 
         <Text numberOfLines={1} style={styles.name} weight="bold">
-          {post.community.name}
+          {name}
         </Text>
       </Pressable>
     </GlassView>
   )
 }
+
 const styles = StyleSheet.create((theme) => ({
   content: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: theme.space[1],
+    gap: theme.space[2],
     height: 44,
     paddingHorizontal: theme.space[4],
   },
@@ -75,6 +99,7 @@ const styles = StyleSheet.create((theme) => ({
     borderRadius: theme.space[8],
   },
   name: {
+    color: PlatformColor('labelColor'),
     flexShrink: 1,
   },
 }))

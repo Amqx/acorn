@@ -2,6 +2,14 @@
 
 ## Upcoming
 
+- added: favorite user
+- added: gallery snap option
+- added: hide community / user option
+- fixed: custom feeds
+- fixed: video crash
+
+## Build 89
+
 - added: clear video cache
 - added: show the comment you're replying to
 - added: unlock orientation for image gallery

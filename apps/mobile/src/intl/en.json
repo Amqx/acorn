@@ -256,6 +256,7 @@
         "share": "Share"
       },
       "list": {
+        "hidden": "Private",
         "more": "Load more"
       },
       "menu": {
@@ -427,7 +428,9 @@
     },
     "users": {
       "about": {
+        "favorite": "Favorite",
         "follow": "Follow",
+        "unfavorite": "Unfavorite",
         "unfollow": "Unfollow"
       },
       "profile": {
@@ -718,6 +721,7 @@
           "blurNsfw": "Blur NSFW",
           "blurSpoiler": "Blur spoiler",
           "feedMuted": "Mute feed",
+          "gallerySnap": "Snap to scroll images in gallery",
           "pictureInPicture": "Allow picture in picture",
           "saveToAlbum": {
             "description": "Requires full photo library access",
@@ -729,7 +733,15 @@
         "posts": {
           "boldTitle": "Bold titles",
           "communityOnTop": "Show community on top",
+          "hideCommunityName": {
+            "description": "Only when in community feed",
+            "label": "Hide community name"
+          },
           "hidePostActions": "Hide post actions",
+          "hideUserName": {
+            "description": "Only when in user feed",
+            "label": "Hide user name"
+          },
           "showFlair": "Show flair",
           "title": "Posts",
           "upvoteOnSave": "Upvote on save"
@@ -844,7 +856,9 @@
       "unsaved": "Post unsaved"
     },
     "users": {
+      "favorited": "Favorited {community}",
       "followed": "Followed {user}",
+      "unfavorited": "Unfavorited {community}",
       "unfollowed": "Unfollowed {user}"
     },
     "video": {

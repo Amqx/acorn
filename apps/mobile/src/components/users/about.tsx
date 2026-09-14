@@ -1,20 +1,25 @@
 import { Image } from 'expo-image'
+import { Stack } from 'expo-router'
 import { View } from 'react-native'
 import { ScrollView } from 'react-native-gesture-handler'
 import { StyleSheet } from 'react-native-unistyles'
 import { useTranslations } from 'use-intl'
+import { useShallow } from 'zustand/react/shallow'
 
 import { useImagePlaceholder } from '~/hooks/image'
 import { useListProps } from '~/hooks/list'
+import { useFavorite } from '~/hooks/mutations/users/favorite'
 import { useFollow } from '~/hooks/mutations/users/follow'
 import { useProfile } from '~/hooks/queries/user/profile'
 import { iPad } from '~/lib/common'
+import { useAuth } from '~/stores/auth'
 
 import { Button } from '../common/button'
 import { Icon } from '../common/icon'
 import { Loading } from '../common/loading'
 import { RefreshControl } from '../common/refresh-control'
 import { Text } from '../common/text'
+import { CommunityHeader } from '../communities/header'
 import { ProfileCard } from './profile'
 
 type Props = {
@@ -26,7 +31,16 @@ export function UserAbout({ name }: Props) {
 
   const { profile, refetch } = useProfile(name)
 
-  const { follow, isPending } = useFollow()
+  const { accountId } = useAuth(
+    useShallow((state) => ({
+      accountId: state.accountId,
+    })),
+  )
+
+  const { profile: user } = useProfile(accountId)
+
+  const { follow, isPending: following } = useFollow()
+  const { favorite, isPending: favoriting } = useFavorite()
 
   const placeholder = useImagePlaceholder()
 
@@ -42,6 +56,14 @@ export function UserAbout({ name }: Props) {
       contentContainerStyle={styles.content}
       refreshControl={<RefreshControl onRefresh={refetch} />}
     >
+      <Stack.Title asChild>
+        <CommunityHeader
+          image={profile.image}
+          name={profile.name}
+          type="user"
+        />
+      </Stack.Title>
+
       {profile.banner ? (
         <Image
           {...placeholder}
@@ -69,33 +91,61 @@ export function UserAbout({ name }: Props) {
 
       <ProfileCard profile={profile} />
 
-      <View style={styles.footer}>
-        <Button
-          color={profile.subscribed ? 'red' : 'accent'}
-          label={t(profile.subscribed ? 'unfollow' : 'follow')}
-          left={
-            <Icon
-              name={
-                profile.subscribed ? 'user-circle-minus' : 'user-circle-plus'
-              }
-              uniProps={(theme) => ({
-                color: theme.colors.accent.contrast,
-              })}
-            />
-          }
-          loading={isPending}
-          onPress={() => {
-            follow({
-              action: profile.subscribed ? 'unfollow' : 'follow',
-              id: profile.subreddit,
-              name: profile.name,
-            })
-          }}
-          style={styles.button}
-        />
+      {profile.noFollow ? null : (
+        <View style={styles.footer}>
+          <Button
+            color={profile.subscribed ? 'red' : 'accent'}
+            label={t(profile.subscribed ? 'unfollow' : 'follow')}
+            left={
+              <Icon
+                name={
+                  profile.subscribed ? 'user-circle-minus' : 'user-circle-plus'
+                }
+                uniProps={(theme) => ({
+                  color: theme.colors.accent.contrast,
+                })}
+              />
+            }
+            loading={following}
+            onPress={() => {
+              follow({
+                action: profile.subscribed ? 'unfollow' : 'follow',
+                id: profile.subreddit,
+                name: profile.name,
+              })
+            }}
+            style={styles.button}
+          />
 
-        <View style={styles.button} />
-      </View>
+          {user ? (
+            <Button
+              color={profile.friend ? 'amber' : 'gray'}
+              label={t(profile.friend ? 'unfavorite' : 'favorite')}
+              left={
+                <Icon
+                  name={profile.friend ? 'star-fill' : 'star'}
+                  uniProps={(theme) => ({
+                    color: profile.friend
+                      ? theme.colors.amber.contrast
+                      : theme.colors.gray.contrast,
+                  })}
+                />
+              }
+              loading={favoriting}
+              onPress={() => {
+                favorite({
+                  favorite: !profile.friend,
+                  name: profile.name,
+                  userId: user.id,
+                })
+              }}
+              style={styles.button}
+            />
+          ) : (
+            <View style={styles.button} />
+          )}
+        </View>
+      )}
     </ScrollView>
   )
 }

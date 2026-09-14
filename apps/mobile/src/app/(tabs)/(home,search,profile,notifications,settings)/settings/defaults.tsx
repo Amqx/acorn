@@ -181,7 +181,7 @@ export default function Screen() {
             if (item.type === 'feed') {
               update({
                 community: undefined,
-                feed: item.feed.name,
+                feed: item.feed.id,
                 feedType: undefined,
               })
             }
