@@ -1,0 +1,39 @@
+{
+  "name": "Acorn (Amqx)",
+  "identifier": "blue.acorn.altstore.Amqx",
+  "sourceURL": "https://raw.githubusercontent.com/Amqx/acorn/altstore/apps.json",
+  "website": "https://github.com/Amqx/acorn",
+  "apps": [
+    {
+      "name": "Acorn",
+      "bundleIdentifier": "blue.acorn",
+      "developerName": "Ali Zahid",
+      "localizedDescription": "Acorn, a Reddit client for iOS. Builds from Amqx/acorn.",
+      "iconURL": "https://raw.githubusercontent.com/Amqx/acorn/9ee5e5c9dd71d2e4399258c3032f15ab0d17263c/apps/mobile/src/assets/images/acorn.png",
+      "category": "social",
+      "appPermissions": {
+        "entitlements": [],
+        "privacy": {
+          "NSCameraUsageDescription": "Allow Acorn to access your camera",
+          "NSFaceIDUsageDescription": "Allow Acorn to access your Face ID biometric data.",
+          "NSLocalNetworkUsageDescription": "Expo Dev Launcher uses the local network to discover and connect to development servers running on your computer.",
+          "NSMicrophoneUsageDescription": "Allow Acorn to access your microphone",
+          "NSPhotoLibraryAddUsageDescription": "Allow Acorn to save photos to your library.",
+          "NSPhotoLibraryUsageDescription": "Allow Acorn to access your photo library."
+        }
+      },
+      "versions": [
+        {
+          "version": "1.0.0",
+          "buildVersion": "89",
+          "date": "2026-09-17T23:49:23Z",
+          "localizedDescription": "Build from commit 9ee5e5c.\nhttps://github.com/Amqx/acorn/actions/runs/35286388019",
+          "downloadURL": "https://github.com/Amqx/acorn/releases/download/altstore-35286388019-1/Acorn-unsigned.ipa",
+          "size": 36464408,
+          "minOSVersion": "16.4"
+        }
+      ]
+    }
+  ],
+  "news": []
+}
