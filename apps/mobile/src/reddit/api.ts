@@ -4,6 +4,50 @@ import { useAuth } from '~/stores/auth'
 export const REDDIT_URI = 'https://www.reddit.com'
 export const REDDIT_OLD_URI = 'https://old.reddit.com'
 
+const POST_PERMALINK = /^\/(?:r|user)\/[^/]+\/comments\/([a-z0-9]+)(?:\/|$)/i
+
+export async function recordPostVisit(
+  permalink: string,
+  postId: string,
+  accountId: string,
+) {
+  if (useAuth.getState().accountId !== accountId) {
+    return
+  }
+
+  const auth = getAuth()
+
+  if (!auth) {
+    return
+  }
+
+  const uri = new URL(permalink, REDDIT_URI)
+  const match = POST_PERMALINK.exec(uri.pathname)
+
+  // The session cookie must only be sent to Reddit's canonical post pages.
+  if (
+    uri.origin !== REDDIT_URI ||
+    match?.[1]?.toLowerCase() !== postId.toLowerCase() ||
+    uri.search ||
+    uri.hash
+  ) {
+    return
+  }
+
+  const headers = new Headers()
+
+  headers.set('accept', 'text/html')
+  headers.set('cookie', `reddit_session=${auth.cookie}`)
+  headers.set('user-agent', getUserAgent())
+
+  await fetch(uri, {
+    credentials: 'omit',
+    headers,
+    method: 'GET',
+    redirect: 'error',
+  })
+}
+
 type Props = {
   body?: URLSearchParams
   method?: 'get' | 'post'

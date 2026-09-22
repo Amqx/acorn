@@ -76,6 +76,7 @@ export type PreferencesPayload = {
   sortSearchPosts: SearchSort
   sortUserComments: CommentSort
   sortUserPosts: UserFeedSort
+  syncOpenedPosts: boolean
   systemScaling: boolean
   theme: Theme
   unmuteFullscreen: boolean
@@ -147,6 +148,7 @@ export const usePreferences = create<State>()(
       sortSearchPosts: 'relevance',
       sortUserComments: 'new',
       sortUserPosts: 'new',
+      syncOpenedPosts: true,
       systemScaling: false,
       theme: 'acorn',
       unmuteFullscreen: true,

@@ -46,6 +46,7 @@ export default function Screen() {
     refreshInterval,
     replyPost,
     saveToAlbum,
+    syncOpenedPosts,
     seenOnMedia,
     seenOnScroll,
     seenOnScrollDelay,
@@ -92,6 +93,7 @@ export default function Screen() {
       seenOnVote: state.seenOnVote,
       showFlair: state.showFlair,
       skipComment: state.skipComment,
+      syncOpenedPosts: state.syncOpenedPosts,
       unmuteFullscreen: state.unmuteFullscreen,
       update: state.update,
       upvoteOnSave: state.upvoteOnSave,
@@ -431,6 +433,18 @@ export default function Screen() {
         <Menu.Separator />
 
         <Menu.Label>{t('history.title')}</Menu.Label>
+
+        <Menu.Switch
+          description={t('history.syncOpenedPosts.description')}
+          icon={<Icon name="clock" />}
+          label={t('history.syncOpenedPosts.label')}
+          onChange={(next) => {
+            update({
+              syncOpenedPosts: next,
+            })
+          }}
+          value={syncOpenedPosts}
+        />
 
         <Menu.Switch
           icon={<Icon name="arrow-fat-up" />}

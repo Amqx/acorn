@@ -700,6 +700,10 @@
         },
         "history": {
           "dimSeen": "Dim seen posts",
+          "syncOpenedPosts": {
+            "description": "Add posts you open in Acorn to your Reddit Recent Posts",
+            "label": "Sync opened posts with Reddit"
+          },
           "hideSeen": {
             "description": "Posts will disappear after you refresh",
             "label": "Hide seen posts"

@@ -3,7 +3,12 @@ import {
   type FlashListRef,
   type ListRenderItem,
 } from '@shopify/flash-list'
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router'
+import {
+  Stack,
+  useFocusEffect,
+  useLocalSearchParams,
+  useRouter,
+} from 'expo-router'
 import { useHeaderHeight } from 'expo-router/react-navigation'
 import fuzzysort from 'fuzzysort'
 import { create } from 'mutative'
@@ -33,6 +38,8 @@ import { SortIntervalMenu } from '~/components/posts/sort-interval'
 import { useListProps } from '~/hooks/list'
 import { usePost } from '~/hooks/queries/posts/post'
 import { glass } from '~/lib/common'
+import { recordPostVisit } from '~/reddit/api'
+import { useAuth } from '~/stores/auth'
 import { usePreferences } from '~/stores/preferences'
 import { type Comment } from '~/types/comment'
 
@@ -51,15 +58,23 @@ export default function Screen() {
 
   const a11y = useTranslations('a11y')
 
-  const { collapsibleComments, replyPost, skipComment, sortPostComments } =
-    usePreferences(
-      useShallow((state) => ({
-        collapsibleComments: state.collapsibleComments,
-        replyPost: state.replyPost,
-        skipComment: state.skipComment,
-        sortPostComments: state.sortPostComments,
-      })),
-    )
+  const accountId = useAuth((state) => state.accountId)
+
+  const {
+    collapsibleComments,
+    replyPost,
+    skipComment,
+    sortPostComments,
+    syncOpenedPosts,
+  } = usePreferences(
+    useShallow((state) => ({
+      collapsibleComments: state.collapsibleComments,
+      replyPost: state.replyPost,
+      skipComment: state.skipComment,
+      sortPostComments: state.sortPostComments,
+      syncOpenedPosts: state.syncOpenedPosts,
+    })),
+  )
 
   const list = useRef<FlashListRef<Comment>>(null)
 
@@ -82,6 +97,48 @@ export default function Screen() {
   })
 
   const previous = useRef(params.id)
+  const recordedVisits = useRef(new Set<string>())
+  const isFocused = useRef(false)
+  const [focusVersion, setFocusVersion] = useState(0)
+
+  useFocusEffect(
+    useCallback(() => {
+      isFocused.current = true
+      recordedVisits.current.clear()
+      setFocusVersion((version) => version + 1)
+
+      return () => {
+        isFocused.current = false
+      }
+    }, []),
+  )
+
+  useEffect(() => {
+    if (
+      !(
+        focusVersion &&
+        isFocused.current &&
+        syncOpenedPosts &&
+        accountId &&
+        post
+      ) ||
+      post.id !== params.id
+    ) {
+      return
+    }
+
+    const key = `${accountId}:${post.id}`
+
+    if (recordedVisits.current.has(key)) {
+      return
+    }
+
+    recordedVisits.current.add(key)
+
+    // Recent Posts is updated by an authenticated HTML visit. Keep the
+    // screen responsive even if this request fails or Reddit is unavailable.
+    recordPostVisit(post.permalink, post.id, accountId).catch(() => undefined)
+  }, [accountId, focusVersion, params.id, post, syncOpenedPosts])
 
   const comments = useMemo(() => {
     if (queryText.length === 0) {
