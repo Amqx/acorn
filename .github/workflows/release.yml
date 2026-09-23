@@ -13,6 +13,11 @@ on:
 jobs:
   build:
     runs-on: macos-26
+    env:
+      USE_CCACHE: "1"
+      CCACHE_COMPILERCHECK: content
+      CCACHE_BASEDIR: ${{ github.workspace }}
+      CCACHE_MAXSIZE: 2G
 
     steps:
       - uses: actions/checkout@v4
@@ -39,16 +44,32 @@ jobs:
           key: ${{ runner.os }}-${{ runner.arch }}-pods-${{ hashFiles('bun.lock', 'apps/mobile/app.config.ts') }}
           restore-keys: ${{ runner.os }}-${{ runner.arch }}-pods-
 
+      - name: Cache native compilation
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Caches/ccache
+          key: ${{ runner.os }}-${{ runner.arch }}-ccache-${{ hashFiles('bun.lock') }}-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-ccache-${{ hashFiles('bun.lock') }}-
+            ${{ runner.os }}-${{ runner.arch }}-ccache-
+
       - name: Install dependencies
         run: |
           bun install --frozen-lockfile
           if ! command -v xcbeautify > /dev/null 2>&1; then
             brew install xcbeautify
           fi
+          if ! command -v ccache > /dev/null 2>&1; then
+            brew install ccache
+          fi
+          ccache --zero-stats
 
       - name: Build unsigned IPA
         working-directory: apps/mobile
         run: ./scripts/build-unsigned-ipa.sh
+
+      - name: Show native cache statistics
+        run: ccache --show-stats
 
       - name: Upload GH artifact
         uses: actions/upload-artifact@v7
