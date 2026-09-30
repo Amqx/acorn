@@ -1,11 +1,12 @@
 # Changelog
 
-## Upcoming
+## Build 90
 
 - added: comment videos
 - added: favorite user
 - added: gallery snap option
 - added: hide community / user option
+- added: high contrast background option
 - fixed: custom feeds
 - fixed: video crash
 
