@@ -9,6 +9,8 @@ CONFIGURATION="${CONFIGURATION:-Release}"
 DERIVED_DATA="${DERIVED_DATA:-build/unsigned}"
 OUTPUT_DIR="${OUTPUT_DIR:-build}"
 IPA_PATH="$OUTPUT_DIR/$SCHEME-unsigned.ipa"
+# The Safari extension needs an absolute path for React Native's ccache linker.
+REACT_NATIVE_PATH="$(pwd)/node_modules/react-native"
 
 if [[ "${SKIP_PREBUILD:-0}" != "1" ]]; then
   npx expo prebuild -p ios --clean
@@ -26,6 +28,7 @@ build() {
     CODE_SIGN_IDENTITY="" \
     CODE_SIGN_ENTITLEMENTS="" \
     DEVELOPMENT_TEAM="" \
+    REACT_NATIVE_PATH="$REACT_NATIVE_PATH" \
     build
 }
 
