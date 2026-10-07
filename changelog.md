@@ -1,5 +1,14 @@
 # Changelog
 
+## Upcoming
+
+- added: iPhone Duo support
+- changed: long image cutoff design
+- removed: long press to switch account
+- removed: messages
+- removed: paywall for video downloads
+- upgraded to beta Expo 58
+
 ## Build 90
 
 - added: comment videos

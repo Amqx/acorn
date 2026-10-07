@@ -17,7 +17,6 @@ export default function getConfig(context: ConfigContext): ExpoConfig {
 
   const plugins: ExpoConfig['plugins'] = [
     '@bacons/apple-targets',
-    'react-native-bottom-tabs',
     router(),
     localization(),
     secureStore(),

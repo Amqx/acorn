@@ -13,25 +13,24 @@ import { useAuth } from '~/stores/auth'
 import { useTemp } from '~/stores/temp'
 
 import { type CommunityParams } from './communities/[name]'
-import { type MessageParams } from './messages/[id]'
 import { type PostParams } from './posts/[id]'
 import { type SignInParams } from './sign-in'
 import { type UserParams } from './users/[name]'
 import { type UserPostsParams } from './users/[name]/[type]'
 
 export const unstable_settings = {
-  initialRouteName: 'index',
+  anchor: 'index',
   notifications: {
-    initialRouteName: 'notifications',
+    anchor: 'notifications',
   },
   profile: {
-    initialRouteName: 'profile',
+    anchor: 'profile',
   },
   search: {
-    initialRouteName: 'search',
+    anchor: 'search',
   },
   settings: {
-    initialRouteName: 'settings',
+    anchor: 'settings',
   },
 }
 
@@ -152,6 +151,7 @@ function StackLayout({ children }: PropsWithChildren) {
   return (
     <Stack
       screenOptions={{
+        contentStyle: styles.content,
         fullScreenGestureEnabled: true,
         headerBackButtonDisplayMode: 'minimal',
         headerBackButtonMenuEnabled: false,
@@ -227,7 +227,7 @@ function StackLayout({ children }: PropsWithChildren) {
 
       <Stack.Screen
         listeners={{
-          beforeRemove() {
+          removed() {
             setComment(null)
           },
         }}
@@ -238,13 +238,6 @@ function StackLayout({ children }: PropsWithChildren) {
           presentation: iPad ? 'formSheet' : 'modal',
           title: t('posts.reply.title'),
         }}
-      />
-
-      <Stack.Screen
-        name="messages/[id]"
-        options={({ route }) => ({
-          title: (route.params as MessageParams).user,
-        })}
       />
 
       <Stack.Screen
@@ -309,7 +302,11 @@ function StackLayout({ children }: PropsWithChildren) {
   )
 }
 
-const styles = StyleSheet.create((theme) => ({
+const styles = StyleSheet.create((theme, runtime) => ({
+  content: {
+    paddingLeft: runtime.insets.left,
+    paddingRight: runtime.insets.right,
+  },
   full: {
     height: '100%',
     width: '100%',
