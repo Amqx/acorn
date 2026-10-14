@@ -2,8 +2,15 @@
 
 ## Upcoming
 
+- changed: tab bar icons
+
+## Build 91
+
+- added: inline images
 - added: iPhone Duo support
+- added: new API
 - changed: long image cutoff design
+- changed: notifications tab is now useless (thanks to new API)
 - removed: long press to switch account
 - removed: messages
 - removed: paywall for video downloads

@@ -23,17 +23,18 @@
       }
     }
   },
-  "files": {
-    "includes": [
-      "!.worktrees",
-      "!apps/mobile/src/assets/icons/phosphor/phosphor.glyphmap.json"
-    ]
-  },
   "extends": [
     "ultracite/biome/core",
     "ultracite/biome/react",
     "ultracite/biome/next"
   ],
+  "files": {
+    "includes": [
+      "!.worktrees",
+      "!apps/mobile/src/assets/icons/phosphor",
+      "!apps/mobile/src/assets/icons/symbols"
+    ]
+  },
   "javascript": {
     "formatter": {
       "quoteStyle": "single",

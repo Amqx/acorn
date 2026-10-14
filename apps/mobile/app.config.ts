@@ -1,6 +1,7 @@
 import { type ConfigContext, type ExpoConfig } from 'expo/config'
 import { withBuildProperties } from 'expo-build-properties'
 import font from 'expo-font/plugin'
+import image from 'expo-image/plugin'
 import imagePicker from 'expo-image-picker/plugin'
 import localization from 'expo-localization/plugin'
 import mediaLibrary from 'expo-media-library/plugin'
@@ -11,6 +12,8 @@ import splashScreen from 'expo-splash-screen/plugin'
 import sqlite from 'expo-sqlite/plugin'
 import webBrowser from 'expo-web-browser/plugin'
 
+import nano from './.nanoicons.json'
+
 export default function getConfig(context: ConfigContext): ExpoConfig {
   const name = 'Acorn'
   const projectId = '8d7d5acc-3688-4cd2-b93f-52391f665348'
@@ -19,6 +22,7 @@ export default function getConfig(context: ConfigContext): ExpoConfig {
     '@bacons/apple-targets',
     router(),
     localization(),
+    image(),
     secureStore(),
     sqlite(),
     webBrowser(),
@@ -56,17 +60,7 @@ export default function getConfig(context: ConfigContext): ExpoConfig {
     screenOrientation({
       initialOrientation: 'PORTRAIT_UP',
     }),
-    [
-      'react-native-nano-icons',
-      {
-        iconSets: [
-          {
-            inputDir: './assets/icons/phosphor',
-            outputDir: './src/assets/icons/phosphor',
-          },
-        ],
-      },
-    ],
+    ['react-native-nano-icons', nano],
   ]
 
   const config = {
@@ -86,7 +80,7 @@ export default function getConfig(context: ConfigContext): ExpoConfig {
     },
     ios: {
       appleTeamId: process.env.APPLE_TEAM_ID,
-      buildNumber: '90',
+      buildNumber: '91',
       bundleIdentifier: 'blue.acorn',
       config: {
         usesNonExemptEncryption: false,

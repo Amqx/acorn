@@ -1,8 +1,67 @@
+import { Reddit, USER_AGENT } from '@acorn/reddit'
+import { addSeconds, isAfter } from 'date-fns'
+import crypto from 'react-native-nitro-crypto'
+import { z } from 'zod'
+
+import { mmkv } from '~/lib/mmkv'
 import { getUserAgent } from '~/lib/user-agent'
-import { useAuth } from '~/stores/auth'
+import { type Account, useAuth } from '~/stores/auth'
 
 export const REDDIT_URI = 'https://www.reddit.com'
 export const REDDIT_OLD_URI = 'https://old.reddit.com'
+
+const refreshing = new Map<string, ReturnType<typeof refreshToken>>()
+
+type CreateProps = {
+  edgeBucket?: string
+  loid: string
+  token: string
+}
+
+export async function createApi(props?: CreateProps) {
+  if (props) {
+    return new Reddit({
+      deviceId: getDeviceId(),
+      edgeBucket: props.edgeBucket,
+      loid: props.loid,
+      token: props.token,
+    })
+  }
+
+  const { accountId, accounts } = useAuth.getState()
+
+  const account = accounts.find((item) => item.id === accountId)
+
+  if (!account) {
+    throw new Error('Not signed in')
+  }
+
+  if (isAfter(new Date(), account.expiresAt)) {
+    let refresh = refreshing.get(account.id)
+
+    if (!refresh) {
+      refresh = refreshToken(account)
+
+      refreshing.set(account.id, refresh)
+    }
+
+    const { edgeBucket, loid, token } = await refresh
+
+    return new Reddit({
+      deviceId: getDeviceId(),
+      edgeBucket,
+      loid,
+      token,
+    })
+  }
+
+  return new Reddit({
+    deviceId: getDeviceId(),
+    edgeBucket: account.edgeBucket,
+    loid: account.loid,
+    token: account.token,
+  })
+}
 
 const POST_PERMALINK = /^\/(?:r|user)\/[^/]+\/comments\/([a-z0-9]+)(?:\/|$)/i
 
@@ -15,9 +74,11 @@ export async function recordPostVisit(
     return
   }
 
-  const auth = getAuth()
+  const { accounts } = useAuth.getState()
 
-  if (!auth) {
+  const account = accounts.find((item) => item.id === accountId)
+
+  if (!account) {
     return
   }
 
@@ -37,7 +98,7 @@ export async function recordPostVisit(
   const headers = new Headers()
 
   headers.set('accept', 'text/html')
-  headers.set('cookie', `reddit_session=${auth.cookie}`)
+  headers.set('cookie', `reddit_session=${account.cookie}`)
   headers.set('user-agent', getUserAgent())
 
   await fetch(uri, {
@@ -48,100 +109,92 @@ export async function recordPostVisit(
   })
 }
 
-type Props = {
-  body?: URLSearchParams
-  method?: 'get' | 'post'
-  url: string | URL
-}
-
-export async function reddit<Response>({ body, method = 'get', url }: Props) {
-  const auth = getAuth()
-
-  if (!auth) {
-    return
-  }
-
-  const headers = new Headers()
-
-  headers.set('cookie', `reddit_session=${auth.cookie}`)
-  headers.set('user-agent', getUserAgent())
-
-  if (method === 'post') {
-    headers.set('x-modhash', auth.modHash)
-  }
-
-  const request: RequestInit = {
-    credentials: 'omit',
-    headers,
-    method,
-    redirect: 'follow',
-  }
-
-  if (body) {
-    request.body = body.toString()
-
-    headers.set('content-type', 'application/x-www-form-urlencoded')
-  }
-
-  const uri = new URL(url, REDDIT_URI)
-
-  if (
-    method === 'get' &&
-    !uri.pathname.startsWith('/api/') &&
-    !uri.pathname.endsWith('.json')
-  ) {
-    uri.pathname += '.json'
-  }
-
-  uri.searchParams.set('raw_json', '1')
-
-  if (__DEV__) {
-    console.log('url', uri.toString())
-  }
-
-  const response = await fetch(uri, request)
-
-  if (url === '/api/read_all_messages') {
-    return {} as Response
-  }
-
-  const text = await response.text()
-
-  let json: {
-    explanation?: string
-    message?: string
-  }
-
+async function refreshToken(account: Account) {
   try {
-    json = JSON.parse(text)
-  } catch (error) {
-    throw new Error(response.statusText, {
-      cause: error,
-    })
-  }
+    const next = await fetchToken(account.cookie)
 
-  if (response.status >= 400) {
-    throw new Error(json.explanation ?? json.message ?? response.statusText)
-  }
+    useAuth.getState().update(account.id, next)
 
-  return json as Response
+    return next
+  } finally {
+    refreshing.delete(account.id)
+  }
 }
 
-export function getAuth() {
-  const { accountId, accounts } = useAuth.getState()
+const TokenSchema = z.object({
+  access_token: z.string(),
+  expires_in: z.number(),
+  loid: z.string(),
+})
 
-  if (!accountId) {
-    return
+export async function fetchToken(cookie: string) {
+  const response = await fetch(
+    'https://www.reddit.com/auth/v2/oauth/access-token/session',
+    {
+      body: JSON.stringify({
+        scopes: ['*', 'email', 'pii'],
+      }),
+      credentials: 'omit',
+      headers: {
+        Authorization: 'Basic b2hYcG9xclpZdWIxa2c6',
+        'Content-Type': 'application/json',
+        Cookie: `reddit_session=${cookie}`,
+        'User-Agent': USER_AGENT,
+      },
+      method: 'post',
+    },
+  )
+
+  if (!response.ok) {
+    throw new Error('Token refresh failed')
   }
 
-  const account = accounts.find((item) => item.id === accountId)
+  const json = await response.json()
 
-  if (!account) {
-    return
-  }
+  const { access_token, expires_in, loid } = TokenSchema.parse({
+    ...json,
+    loid: response.headers.get('x-reddit-loid'),
+  })
 
   return {
-    cookie: account.cookie,
-    modHash: account.modHash,
+    edgeBucket: getBucket(response),
+    expiresAt: addSeconds(new Date(), expires_in - 3600),
+    loid,
+    token: access_token,
+  }
+}
+
+const KEY_DEVICE_ID = 'device-id'
+
+function getDeviceId() {
+  const exists = mmkv.getString(KEY_DEVICE_ID)
+
+  if (exists) {
+    return exists
+  }
+
+  const deviceId = crypto.randomUUID()
+
+  mmkv.set(KEY_DEVICE_ID, deviceId)
+
+  return deviceId
+}
+
+function getBucket(response: Response) {
+  const cookie = response.headers.get('set-cookie')
+
+  if (!cookie) {
+    return
+  }
+
+  const { edgebucket } = Object.fromEntries(
+    cookie
+      .split(';')
+      .map((item) => item.trim())
+      .map((item) => item.split('=')),
+  )
+
+  if (typeof edgebucket === 'string') {
+    return edgebucket
   }
 }

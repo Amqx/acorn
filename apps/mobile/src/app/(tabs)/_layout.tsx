@@ -7,6 +7,7 @@ import { useUnistyles } from 'react-native-unistyles'
 import { useTranslations } from 'use-intl'
 import { useShallow } from 'zustand/react/shallow'
 
+import { type NavSymbol } from '~/assets/icons/symbols/nav.symbols'
 import { useUnread } from '~/hooks/queries/user/unread'
 import { glass } from '~/lib/common'
 import { useAuth } from '~/stores/auth'
@@ -62,7 +63,7 @@ export default function Layout() {
       tintColor={theme.colors.accent.accent}
     >
       <NativeTabs.Trigger name="(home)">
-        <NativeTabs.Trigger.Icon sf="house" />
+        <NativeTabs.Trigger.Icon xcasset={'nano.house' satisfies NavSymbol} />
 
         <NativeTabs.Trigger.Label hidden>
           {t('home.title')}
@@ -70,7 +71,9 @@ export default function Layout() {
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="(search)">
-        <NativeTabs.Trigger.Icon sf="magnifyingglass" />
+        <NativeTabs.Trigger.Icon
+          xcasset={'nano.magnifying-glass' satisfies NavSymbol}
+        />
 
         <NativeTabs.Trigger.Label hidden>
           {t('search.title')}
@@ -78,7 +81,9 @@ export default function Layout() {
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="(profile)">
-        <NativeTabs.Trigger.Icon sf="person.crop.circle" />
+        <NativeTabs.Trigger.Icon
+          xcasset={'nano.user-circle' satisfies NavSymbol}
+        />
 
         <NativeTabs.Trigger.Label hidden>
           {t('profile.title')}
@@ -90,7 +95,7 @@ export default function Layout() {
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="(notifications)">
-        <NativeTabs.Trigger.Icon sf="bell" />
+        <NativeTabs.Trigger.Icon xcasset={'nano.bell' satisfies NavSymbol} />
 
         <NativeTabs.Trigger.Label hidden>
           {t('notifications.title')}
@@ -98,7 +103,9 @@ export default function Layout() {
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="(settings)">
-        <NativeTabs.Trigger.Icon sf="gearshape" />
+        <NativeTabs.Trigger.Icon
+          xcasset={'nano.gear-six' satisfies NavSymbol}
+        />
 
         <NativeTabs.Trigger.Label hidden>
           {t('settings.title')}
