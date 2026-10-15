@@ -36,6 +36,7 @@
       }
     },
     "privacy": {
+      "header": "Privacy policy",
       "sections": [
         {
           "body": [
@@ -101,6 +102,7 @@
       "updated": "Last updated October 15, 2026"
     },
     "terms": {
+      "header": "Terms of use",
       "sections": [
         {
           "body": [
@@ -142,6 +144,12 @@
         },
         {
           "body": [
+            "We may change, suspend or discontinue Acorn, or any part of it, at any time."
+          ],
+          "title": "Changes to the app"
+        },
+        {
+          "body": [
             "Acorn's source code is available under the <license>GNU GPL v3</license>. These terms cover the app we distribute, not your rights under that license."
           ],
           "title": "Open source"
@@ -154,7 +162,8 @@
         },
         {
           "body": [
-            "To the fullest extent allowed by law, we aren't liable for any indirect, incidental or consequential damages, or for any loss of data, content or account access, that results from using or being unable to use Acorn."
+            "To the fullest extent allowed by law, we aren't liable for any indirect, incidental or consequential damages, or for any loss of data, content or account access, that results from using or being unable to use Acorn.",
+            "Some places don't allow certain warranties or liabilities to be excluded or limited. If you live in one of them, these terms don't take away any consumer rights you have under the law there."
           ],
           "title": "Limitation of liability"
         },

@@ -227,6 +227,7 @@ const styles = StyleSheet.create((theme, runtime) => ({
   },
   listContent: {
     paddingBottom: runtime.insets.bottom,
+    paddingRight: runtime.insets.right,
   },
   section: {
     marginTop: theme.space[6],
