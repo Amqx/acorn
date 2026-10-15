@@ -25,6 +25,7 @@
   },
   "files": {
     "includes": [
+      "!.worktrees",
       "!apps/mobile/src/assets/icons/phosphor/phosphor.glyphmap.json"
     ]
   },
