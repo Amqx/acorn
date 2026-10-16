@@ -1,5 +1,11 @@
 # Changelog
 
+## Upcoming
+
+- fixed: blank login screen
+- fixed: comments opening in browser
+- fixed: create comment
+
 ## Build 91-92
 
 - added: inline images

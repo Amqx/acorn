@@ -88,10 +88,6 @@ export default function Layout() {
         <NativeTabs.Trigger.Label hidden>
           {t('profile.title')}
         </NativeTabs.Trigger.Label>
-
-        {unread ? (
-          <NativeTabs.Trigger.Badge>{unread}</NativeTabs.Trigger.Badge>
-        ) : null}
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="(notifications)">
@@ -100,6 +96,10 @@ export default function Layout() {
         <NativeTabs.Trigger.Label hidden>
           {t('notifications.title')}
         </NativeTabs.Trigger.Label>
+
+        {unread ? (
+          <NativeTabs.Trigger.Badge>{unread}</NativeTabs.Trigger.Badge>
+        ) : null}
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="(settings)">
