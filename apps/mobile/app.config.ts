@@ -13,6 +13,7 @@ import sqlite from 'expo-sqlite/plugin'
 import webBrowser from 'expo-web-browser/plugin'
 
 import nano from './.nanoicons.json'
+import { getCommit } from './scripts/commit'
 
 export default function getConfig(context: ConfigContext): ExpoConfig {
   const name = 'Acorn'
@@ -69,6 +70,7 @@ export default function getConfig(context: ConfigContext): ExpoConfig {
       typedRoutes: true,
     },
     extra: {
+      commit: getCommit(),
       eas: {
         projectId,
       },
