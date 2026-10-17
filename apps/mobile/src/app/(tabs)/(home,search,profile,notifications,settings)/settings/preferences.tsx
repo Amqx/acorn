@@ -41,6 +41,7 @@ export default function Screen() {
     linkBrowser,
     minimizeTabBar,
     oldReddit,
+    perforatedCutoff,
     pictureInPicture,
     privateScreenshots,
     refreshInterval,
@@ -82,6 +83,7 @@ export default function Screen() {
       linkBrowser: state.linkBrowser,
       minimizeTabBar: state.minimizeTabBar,
       oldReddit: state.oldReddit,
+      perforatedCutoff: state.perforatedCutoff,
       pictureInPicture: state.pictureInPicture,
       privateScreenshots: state.privateScreenshots,
       refreshInterval: state.refreshInterval,
@@ -571,6 +573,17 @@ export default function Screen() {
         <Menu.Separator />
 
         <Menu.Label>{t('media.title')}</Menu.Label>
+
+        <Menu.Switch
+          icon={<Icon name="ticket" />}
+          label={t('media.perforatedCutoff')}
+          onChange={(next) => {
+            update({
+              perforatedCutoff: next,
+            })
+          }}
+          value={perforatedCutoff}
+        />
 
         <Menu.Switch
           icon={<Icon name="square-split-horizontal" />}

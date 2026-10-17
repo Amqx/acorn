@@ -2,9 +2,15 @@
 
 ## Upcoming
 
+- added: in app changelog
+- added: perforated cutoff option
+- changed: all accounts logged out
+- changed: all settings reset
+- changed: higher resolution thumbnails
 - fixed: blank login screen
 - fixed: comments opening in browser
 - fixed: create comment
+- fixed: extra offset for scroll to next comment
 
 ## Build 91-92
 

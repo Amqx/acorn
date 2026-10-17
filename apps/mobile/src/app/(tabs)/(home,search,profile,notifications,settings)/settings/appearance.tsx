@@ -1,5 +1,5 @@
 import { ScrollView } from 'react-native-gesture-handler'
-import { StyleSheet } from 'react-native-unistyles'
+import { StyleSheet, useUnistyles } from 'react-native-unistyles'
 import { useTranslations } from 'use-intl'
 import { useShallow } from 'zustand/react/shallow'
 
@@ -15,6 +15,10 @@ import { type TypographyToken, typography } from '~/styles/tokens'
 
 export default function Screen() {
   const t = useTranslations('screen.settings.appearance')
+
+  const {
+    theme: { variant },
+  } = useUnistyles()
 
   const {
     colorfulComments,
@@ -66,7 +70,7 @@ export default function Screen() {
         <Menu.Switch
           description={t('preferences.highContrastBackground.description')}
           icon={<Icon name="circle-half" />}
-          label={t('preferences.highContrastBackground.label')}
+          label={t(`preferences.highContrastBackground.label.${variant}`)}
           onChange={(next) => {
             update({
               highContrastBackground: next,
